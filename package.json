@@ -1,0 +1,27 @@
+{
+  "name": "dice-chat",
+  "version": "0.1.0",
+  "main": "index.html",
+  "scripts": {
+    "start": "npm run dev",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "chat",
+    "p2p",
+    "dice-roller"
+  ],
+  "author": "auranym",
+  "license": "MIT",
+  "description": "",
+  "devDependencies": {
+    "vite": "^5.4.8"
+  },
+  "dependencies": {
+    "@dice-roller/rpg-dice-roller": "^5.5.0",
+    "@fontsource-variable/quicksand": "^5.1.0",
+    "peerjs": "^1.5.4"
+  }
+}
