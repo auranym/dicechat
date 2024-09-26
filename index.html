@@ -5,7 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DiceChat</title>
+  <!-- Modules -->
   <script type="module" src="./main.js"></script>
+  <script type="module" src="./src/components/message.js"></script>
 </head>
 
 <body>
@@ -16,6 +18,8 @@
   </header>
   <button id="roller">Roll die!</button>
   <p>Result: <b><span id="result"></span></b></p>
+  <dc-message user="foo" message="bar"></dc-message>
+  <dc-message user="foo" message="baz"></dc-message>
 </body>
 
 </html>
