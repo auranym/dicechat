@@ -7,23 +7,30 @@
   <title>DiceChat</title>
   <!-- Modules -->
   <script type="module" src="./main.js"></script>
-  <script type="module" src="./src/components/message.js"></script>
+  <script type="module" src="./src/components/icon.js"></script>
+  <script type="module" src="./src/components/logo.js"></script>
 </head>
 
-<body>
+<body class="vflex gap-lg">
   <header>
-    <h1>Dice<svg width="0" height="0">
-        <use xlink:href="/icons/dice.svg#dice" />
-      </svg>Chat</h1>
+    <h1>
+      <dc-logo></dc-logo>
+    </h1>
   </header>
-  <h2>Host</h2>
-  <button id="host">Connect host</button>
-  <button id="hostmessage">Send message</button>
-  <button id="close">Close room</button>
-  <h2>Client</h2>
-  <button id="client">Connect client</button>
-  <button id="clientmessage">Send message</button>
-  <button id="leave">Client leave</button>
+  <main class="hflex gap-lg">
+    <section class="panel vflex gap-xs">
+      <h2>Host</h2>
+      <button id="host">Connect host</button>
+      <button id="hostmessage">Send message</button>
+      <button id="close">Close room</button>
+    </section>
+    <section class="vflex panel gap-xs">
+      <h2>Client</h2>
+      <button id="client">Connect client</button>
+      <button id="clientmessage">Send message</button>
+      <button id="leave">Client leave</button>
+    </section>
+  </main>
 </body>
 
 </html>
