@@ -5,7 +5,7 @@ export class Logo extends HTMLElement {
   }
 
   render() {
-    this.innerHTML = /* html */`<span class="hinflex">Dice<dc-icon icon="dice"></dc-icon>Chat</span>`;
+    this.innerHTML = /* html */`<span class="hinflex align-center">Dice<dc-icon icon="dice"></dc-icon>Chat</span>`;
   }
 }
 

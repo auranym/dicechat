@@ -101,20 +101,46 @@ dc-icon {
   height: 1em;
 }
 
+dc-chat {
+  height: 50vh;
+  width: min(200px, 80vh);
+}
+
+dc-chat ul {
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  list-style: none;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-light-gray) transparent;
+}
+
+dc-chat p {
+  margin: 0;
+}
+
 .vflex {
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
 .hflex {
   display: flex;
-  align-items: center;
 }
 
 .hinflex {
   display: inline-flex;
+}
+
+.align-center {
   align-items: center;
+}
+
+.align-end {
+  align-items: end;
 }
 
 .gap-xs {

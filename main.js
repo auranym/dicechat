@@ -4,6 +4,11 @@ import { RoomHost, RoomClient } from './src/lib';
 
 const roomCode = 'AAAAAA';
 let peer;
+let count = 0;
+
+document.querySelector('#chatmessage').onclick = () => {
+  document.querySelector('dc-chat').addMessage('test message' + count++);
+}
 
 document.querySelector('#host').onclick = () => {
   if (peer) {
