@@ -7,34 +7,20 @@
   <title>DiceChat</title>
   <!-- Modules -->
   <script type="module" src="./main.js"></script>
+  <script type="module" src="./src/components/chat.js"></script>
+  <script type="module" src="./src/components/home.js"></script>
   <script type="module" src="./src/components/icon.js"></script>
   <script type="module" src="./src/components/logo.js"></script>
-  <script type="module" src="./src/components/chat.js"></script>
 </head>
 
-<body class="vflex align-center gap-lg">
+<body class="vflex align-center gap-sm">
   <header>
     <h1>
       <dc-logo></dc-logo>
     </h1>
   </header>
   <main class="hflex align-center gap-lg">
-    <section class="vflex gap-xs">
-      <dc-chat class="panel"></dc-chat>
-      <button id="chatmessage">Add message</button>
-    </section>
-    <section class="panel vflex align-center gap-xs">
-      <h2>Host</h2>
-      <button id="host">Connect host</button>
-      <button id="hostmessage">Send message</button>
-      <button id="close">Close room</button>
-    </section>
-    <section class="panel vflex align-center gap-xs">
-      <h2>Client</h2>
-      <button id="client">Connect client</button>
-      <button id="clientmessage">Send message</button>
-      <button id="leave">Client leave</button>
-    </section>
+    <dc-home></dc-home>
   </main>
 </body>
 

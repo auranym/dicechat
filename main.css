@@ -3,8 +3,11 @@
   --color-black: #272727;
   --color-white: #ffffff;
   --color-light-gray: #eaeaea;
+  --color-gray: #919191;
   --color-dark-gray: #484848;
+  --color-blue: #207cc8;
   --color-light-blue: #7eb4eb;
+  --color-red: #cf4049;
   --font: "Quicksand Variable", sans-serif;
   --font-weight: 500;
   --font-weight-bold: 700;
@@ -64,7 +67,7 @@ p {
   font-size: var(--font-sm);
 }
 
-button {
+button, input {
   font-family: var(--font);
   font-weight: var(--font-weight);
   font-size: var(--font-sm);
@@ -74,6 +77,10 @@ button {
   border: 2px solid var(--color-black);
   background-color: var(--color-white);
   overflow: hidden;
+}
+
+input::placeholder {
+  color: var(--color-gray);
 }
 
 button:hover {
@@ -86,6 +93,20 @@ button:active {
   background-color: var(--color-dark-gray);
   border-color: var(--color-dark-gray);
   color: var(--color-white);
+}
+
+button:disabled,
+button:hover:disabled,
+button:active:disabled,
+input:disabled {
+  cursor: default;
+  background-color: var(--color-white);
+  color: var(--color-gray);
+  border-color: var(--color-gray);
+}
+
+input:disabled::placeholder {
+  color: var(--color-gray);
 }
 
 header h1 {
@@ -122,6 +143,26 @@ dc-chat p {
   margin: 0;
 }
 
+.text-blue {
+  color: var(--color-blue);
+}
+
+.text-red {
+  color: var(--color-red);
+}
+
+.font-md {
+  font-size: var(--font-md);
+}
+
+.font-lg {
+  font-size: var(--font-lg);
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
 .vflex {
   display: flex;
   flex-direction: column;
@@ -133,6 +174,10 @@ dc-chat p {
 
 .hinflex {
   display: inline-flex;
+}
+
+.full-width {
+  width: 100%;
 }
 
 .align-center {
@@ -149,6 +194,10 @@ dc-chat p {
 
 .gap-sm {
   gap: var(--space-sm);
+}
+
+.gap-md {
+  gap: var(--space-md);
 }
 
 .gap-lg {
