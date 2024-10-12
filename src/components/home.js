@@ -37,7 +37,7 @@ export class Home extends HTMLElement {
         <div class="vflex align-stretch gap-sm">
           <div class="vflex align-stretch gap-xs">
             <label for="room-code" class="text-centered font-md">Enter a code to join a room.</label>
-            <p id="room-code-status" class="text-centered" hidden="true"></p>
+            <p id="join-status" class="text-centered" hidden="true"></p>
           </div>
           <div class="hflex justify-stretch gap-xs">
             <input
@@ -70,6 +70,39 @@ export class Home extends HTMLElement {
     this.querySelector('#host').onclick = this.onHost.bind(this);
   }
 
+  setStatus(statusElement, { isHidden = false, message, isError = false }) {
+    if (!statusElement) {
+      return;
+    }
+
+    if (isHidden) {
+      statusElement.hidden = true;
+      return;
+    }
+    else {
+      statusElement.hidden = false;
+    }
+
+    statusElement.innerText = message;
+
+    if (isError) {
+      statusElement.classList.add('text-red');
+    }
+    else {
+      statusElement.classList.remove('text-red');
+    }
+  }
+
+  setHostStatus(config) {
+    this.setStatus(this.querySelector('#host-status'), config);
+    this.setStatus(this.querySelector('#join-status'), { isHidden: true });
+  }
+
+  setJoinStatus(config) {
+    this.setStatus(this.querySelector('#join-status'), config);
+    this.setStatus(this.querySelector('#host-status'), { isHidden: true });
+  }
+
   setDisabled(val) {
     this.querySelector('#username').disabled = val;
     this.querySelector('#room-code').disabled = val;
@@ -84,54 +117,38 @@ export class Home extends HTMLElement {
   onRoomCodeInput(val) {
     val.target.value = val.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6);
     // Hide error status
-    const status = this.querySelector('#room-code-status');
-    if (!status.hidden) {
-      status.hidden = true;
-    }
+    this.setJoinStatus({ hidden: true });
+    this.setHostStatus({ hidden: true });
   }
 
   onJoin() {
-    const status = this.querySelector('#room-code-status');
-
     // Check for username.
     if (this.getUsername().length === 0) {
-      status.hidden = false;
-      status.innerText = 'Invalid username.';
-      status.classList.add('text-red');
+      this.setJoinStatus({ message: 'Invalid username.', isError: true });
       return;
     }
 
     // Check room code and show error if invalid.
     if (!validateRoomCode(this.querySelector('#room-code').value)) {
-      status.hidden = false;
-      status.innerText = 'Invalid room code.\nIt must be 6 letters long.';
-      status.classList.add('text-red');
+      this.setJoinStatus({ message: 'Invalid room code.\nIt must be 6 letters long.', isError: true });
       return;
     }
 
     // Attempt to connect.
     this.setDisabled(true);
-    status.hidden = false;
-    status.innerText = 'Connecting...';
-    status.classList.remove('text-red');
+    this.setJoinStatus({ message: 'Connecting...' });
   }
 
   onHost() {
-    const status = this.querySelector('#host-status');
-    
     // Check for username.
     if (this.getUsername().length === 0) {
-      status.hidden = false;
-      status.innerText = 'Invalid username.';
-      status.classList.add('text-red');
+      this.setHostStatus({ message: 'Invalid username.', isError: true });
       return;
     }
 
     // Attempt to connect
     this.setDisabled(true);
-    status.hidden = false;
-    status.innerText = 'Creating room...';
-    status.classList.remove('text-red');
+    this.setHostStatus({ message: 'Creating room...' });
   }
 }
 
