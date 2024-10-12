@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { validateRoomCode } from '../lib';
 
 export class Home extends HTMLElement {
@@ -9,45 +10,78 @@ export class Home extends HTMLElement {
   render() {
     // Render HTML
     this.innerHTML = /* html */`
-    <div class="vflex align-center gap-lg">
-      <section class="full-width panel vflex align-center gap-md">
-        <div class="vflex align-center gap-xs">
-          <label for="room-code" class="font-md font-bold">Join a room</label>
-          <p id="room-code-status" hidden="true" style="margin: 0"></p>
-        </div>
-        <div class="hflex align-center gap-xs">
+    <main class="vflex align-center gap-xs" style="width: min(400px, calc(100vw - 2 * var(--space-md)))">
+      <!-- Heading -->
+      <h1 class="text-centered">Welcome to <dc-logo></dc-logo>!</h1>
+      <p class="font-md text-centered">Roll dice with friends with<br/>no sign-up and no hassle.</p>
+
+      <!-- Username -->
+      <section class="full-width vflex align-stretch">
+        <h2 class="text-centered">First...</h2>
+        <div class="panel vflex align-stretch gap-sm">
+          <label for="username" class="text-centered font-md">Enter a username.</label>
           <input
-            id="room-code"
+            id="username"
             type="text"
             autocomplete="off"
-            placeholder="Enter code"
+            placeholder="Username"
           />
-          <button id="room-join">Join</button>
         </div>
       </section>
-      <section class="full-width panel vflex align-center gap-md">
-        <div class="vflex align-center gap-xs">
-          <label for="room-host" class="font-md font-bold">Host a room</label>
-          <p id="room-host-status" hidden="true" style="margin: 0"></p>
+
+      <!-- Join or host -->
+      <section class="full-width vflex align-stretch">
+      <h2 class="text-centered">Then...</h2>
+      <div class="panel vflex align-stretch gap-md">
+        <!-- Join -->
+        <div class="vflex align-stretch gap-sm">
+          <div class="vflex align-stretch gap-xs">
+            <label for="room-code" class="text-centered font-md">Enter a code to join a room.</label>
+            <p id="room-code-status" class="text-centered" hidden="true"></p>
+          </div>
+          <div class="hflex justify-stretch gap-xs">
+            <input
+              id="room-code"
+              class="flex"
+              type="text"
+              autocomplete="off"
+              placeholder="Room code"
+            />
+            <button id="join">Join</button>
+          </div>
         </div>
-        <button id="room-host">Host</button>
+        <p class="font-lg font-bold text-centered">Or</p>
+        <!-- Host -->
+        <div class="vflex align-center gap-sm">
+          <div class="vflex align-stretch gap-xs">
+            <label for="host" class="text-centered font-md">Host a room yourself.</label>
+            <p id="host-status" class="text-centered" hidden="true"></p>
+          </div>
+          <button id="host">Host</button>
+        </div>
+      </div>
       </section>
-    </div>
+    </main>
     `;
 
     // Hydrate
-    this.querySelector('#room-code').oninput = this.onInput.bind(this);
-    this.querySelector('#room-join').onclick = this.onJoin.bind(this);
-    this.querySelector('#room-host').onclick = this.onHost.bind(this);
+    this.querySelector('#room-code').oninput = this.onRoomCodeInput.bind(this);
+    this.querySelector('#join').onclick = this.onJoin.bind(this);
+    this.querySelector('#host').onclick = this.onHost.bind(this);
   }
 
   setDisabled(val) {
+    this.querySelector('#username').disabled = val;
     this.querySelector('#room-code').disabled = val;
-    this.querySelector('#room-join').disabled = val;
-    this.querySelector('#room-host').disabled = val;
+    this.querySelector('#join').disabled = val;
+    this.querySelector('#host').disabled = val;
   }
 
-  onInput(val) {
+  getUsername() {
+    return DOMPurify.sanitize(this.querySelector('#username').value);
+  }
+
+  onRoomCodeInput(val) {
     val.target.value = val.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6);
     // Hide error status
     const status = this.querySelector('#room-code-status');
@@ -58,10 +92,19 @@ export class Home extends HTMLElement {
 
   onJoin() {
     const status = this.querySelector('#room-code-status');
+
+    // Check for username.
+    if (this.getUsername().length === 0) {
+      status.hidden = false;
+      status.innerText = 'Invalid username.';
+      status.classList.add('text-red');
+      return;
+    }
+
     // Check room code and show error if invalid.
     if (!validateRoomCode(this.querySelector('#room-code').value)) {
       status.hidden = false;
-      status.innerText = 'Invalid room code. It must be 6 letters long.';
+      status.innerText = 'Invalid room code.\nIt must be 6 letters long.';
       status.classList.add('text-red');
       return;
     }
@@ -74,7 +117,16 @@ export class Home extends HTMLElement {
   }
 
   onHost() {
-    const status = this.querySelector('#room-host-status');
+    const status = this.querySelector('#host-status');
+    
+    // Check for username.
+    if (this.getUsername().length === 0) {
+      status.hidden = false;
+      status.innerText = 'Invalid username.';
+      status.classList.add('text-red');
+      return;
+    }
+
     // Attempt to connect
     this.setDisabled(true);
     status.hidden = false;
