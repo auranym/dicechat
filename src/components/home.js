@@ -10,7 +10,7 @@ export class Home extends HTMLElement {
   render() {
     // Render HTML
     this.innerHTML = /* html */`
-    <main class="vflex align-center gap-xs" style="width: min(400px, calc(100vw - 2 * var(--space-md)))">
+    <main class="vflex align-center gap-xs">
       <!-- Heading -->
       <h1 class="text-centered">Welcome to <dc-logo></dc-logo>!</h1>
       <p class="font-md text-centered">Roll dice with friends with<br/>no sign-up and no hassle.</p>
@@ -117,8 +117,8 @@ export class Home extends HTMLElement {
   onRoomCodeInput(val) {
     val.target.value = val.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6);
     // Hide error status
-    this.setJoinStatus({ hidden: true });
-    this.setHostStatus({ hidden: true });
+    this.setJoinStatus({ isHidden: true });
+    this.setHostStatus({ isHidden: true });
   }
 
   onJoin() {
@@ -136,7 +136,8 @@ export class Home extends HTMLElement {
 
     // Attempt to connect.
     this.setDisabled(true);
-    this.setJoinStatus({ message: 'Connecting...' });
+    this.setJoinStatus({ isHidden: true });
+    document.querySelector('dc-message')?.showMessage?.('Connecting...', { isClosable: false });
   }
 
   onHost() {
@@ -148,7 +149,8 @@ export class Home extends HTMLElement {
 
     // Attempt to connect
     this.setDisabled(true);
-    this.setHostStatus({ message: 'Creating room...' });
+    this.setHostStatus({ isHidden: true });
+    document.querySelector('dc-message')?.showMessage?.('Connecting...', { isClosable: false });
   }
 }
 

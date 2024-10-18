@@ -38,6 +38,11 @@ body {
   padding-bottom: var(--space-lg);
 }
 
+main,
+dc-message {
+  width: min(400px, calc(100vw - 2 * var(--space-md)));
+}
+
 h1, h2, h3, h4, h5, h6, b {
   font-weight: var(--font-weight-bold);
 }
@@ -145,6 +150,11 @@ dc-chat p {
   margin: 0;
 }
 
+dc-message {
+  position: sticky;
+  top: var(--space-sm);
+}
+
 .text-blue {
   color: var(--color-blue);
 }
@@ -186,9 +196,18 @@ dc-chat p {
   width: 100%;
 }
 
+.full-height {
+  height: 100%;
+}
+
 .justify-stretch {
   justify-content: stretch;
 }
+
+.justify-space-between {
+  justify-content: space-between;
+}
+
 .flex {
   flex: 1 1 0%;
   min-width: 0;
@@ -227,4 +246,8 @@ dc-chat p {
   border-radius: var(--border-radius);
   padding: var(--space-md);
   box-sizing: border-box;
+}
+
+.border-black {
+  border-color: var(--color-black);
 }
