@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import { validateRoomCode } from '../lib';
+import { validateRoomCode, Host } from '../lib';
 
 export class Home extends HTMLElement {
   constructor() {
@@ -65,12 +65,12 @@ export class Home extends HTMLElement {
     `;
 
     // Hydrate
-    this.querySelector('#room-code').oninput = this.onRoomCodeInput.bind(this);
-    this.querySelector('#join').onclick = this.onJoin.bind(this);
-    this.querySelector('#host').onclick = this.onHost.bind(this);
+    this.querySelector('#room-code').oninput = this._onRoomCodeInput.bind(this);
+    this.querySelector('#join').onclick = this._onJoin.bind(this);
+    this.querySelector('#host').onclick = this._onHost.bind(this);
   }
 
-  setStatus(statusElement, { isHidden = false, message, isError = false }) {
+  _setStatus(statusElement, { isHidden = false, message, isError = false }) {
     if (!statusElement) {
       return;
     }
@@ -93,64 +93,71 @@ export class Home extends HTMLElement {
     }
   }
 
-  setHostStatus(config) {
-    this.setStatus(this.querySelector('#host-status'), config);
-    this.setStatus(this.querySelector('#join-status'), { isHidden: true });
+  _setHostStatus(config) {
+    this._setStatus(this.querySelector('#host-status'), config);
+    this._setStatus(this.querySelector('#join-status'), { isHidden: true });
   }
 
-  setJoinStatus(config) {
-    this.setStatus(this.querySelector('#join-status'), config);
-    this.setStatus(this.querySelector('#host-status'), { isHidden: true });
+  _setJoinStatus(config) {
+    this._setStatus(this.querySelector('#join-status'), config);
+    this._setStatus(this.querySelector('#host-status'), { isHidden: true });
   }
 
-  setDisabled(val) {
+  _setDisabled(val) {
     this.querySelector('#username').disabled = val;
     this.querySelector('#room-code').disabled = val;
     this.querySelector('#join').disabled = val;
     this.querySelector('#host').disabled = val;
   }
 
-  getUsername() {
+  _getUsername() {
     return DOMPurify.sanitize(this.querySelector('#username').value);
   }
 
-  onRoomCodeInput(val) {
+  _onRoomCodeInput(val) {
     val.target.value = val.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6);
     // Hide error status
-    this.setJoinStatus({ isHidden: true });
-    this.setHostStatus({ isHidden: true });
+    this._setJoinStatus({ isHidden: true });
+    this._setHostStatus({ isHidden: true });
   }
 
-  onJoin() {
+  _onJoin() {
     // Check for username.
-    if (this.getUsername().length === 0) {
-      this.setJoinStatus({ message: 'Invalid username.', isError: true });
+    if (this._getUsername().length === 0) {
+      this._setJoinStatus({ message: 'Invalid username.', isError: true });
       return;
     }
 
     // Check room code and show error if invalid.
     if (!validateRoomCode(this.querySelector('#room-code').value)) {
-      this.setJoinStatus({ message: 'Invalid room code.\nIt must be 6 letters long.', isError: true });
+      this._setJoinStatus({ message: 'Invalid room code.\nIt must be 6 letters long.', isError: true });
       return;
     }
 
     // Attempt to connect.
-    this.setDisabled(true);
-    this.setJoinStatus({ isHidden: true });
+    this._setDisabled(true);
+    this._setJoinStatus({ isHidden: true });
     document.querySelector('dc-message')?.showMessage?.('Connecting...', { isClosable: false });
   }
 
-  onHost() {
+  _onHost() {
     // Check for username.
-    if (this.getUsername().length === 0) {
-      this.setHostStatus({ message: 'Invalid username.', isError: true });
+    const username = this._getUsername();
+    if (username.length === 0) {
+      this._setHostStatus({ message: 'Invalid username.', isError: true });
       return;
     }
 
     // Attempt to connect
-    this.setDisabled(true);
-    this.setHostStatus({ isHidden: true });
-    document.querySelector('dc-message')?.showMessage?.('Connecting...', { isClosable: false });
+    this._setDisabled(true);
+    this._setHostStatus({ isHidden: true });
+    const message = document.querySelector('dc-message');
+    message?.showMessage?.('Connecting...', { isClosable: false });
+    new Host({
+      username,
+      onOpen: roomCode => message?.showMessage?.('Created room with code ' + roomCode),
+      onFailure: reason => message?.showMessage?.('Failed to set up room:\n' + reason)
+    })
   }
 }
 

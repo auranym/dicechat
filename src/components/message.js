@@ -10,7 +10,7 @@ export class Message extends HTMLElement {
       <div class="hflex align-center justify-space-between">
         <p>Hello world!</p>
         <form method="dialog">
-          <button autofocus aria-label="Close message" class="hinflex align-center">
+          <button autofocus aria-label="Close message" class="hinflex align-center gap-sm">
             <dc-icon icon="x"></dc-icon>
           </button>
         </form>
@@ -19,7 +19,7 @@ export class Message extends HTMLElement {
     `;
   }
 
-  showMessage(message, { color = '', isClosable = true }) {
+  showMessage(message, { color = '', isClosable = true } = {}) {
     const dialog = this.querySelector('dialog');
     const p = this.querySelector('p');
     const form = this.querySelector('form');

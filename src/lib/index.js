@@ -1,10 +1,10 @@
-import RoomClient from './room-client';
-import RoomHost from './room-host';
+import Client from './client';
+import Host from './host';
 import { validateRoomCode, generateRoomCode, getRoomCodePeerId } from './room-code';
 
 export {
-  RoomClient,
-  RoomHost,
+  Client,
+  Host,
   validateRoomCode,
   generateRoomCode,
   getRoomCodePeerId

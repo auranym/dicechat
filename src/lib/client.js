@@ -1,7 +1,7 @@
 import { Peer } from 'peerjs';
 import { getRoomCodePeerId, validateRoomCode } from './room-code';
 
-export default class RoomClient {
+export default class Client {
   // Private properties
   _roomCode;
   _peer;
