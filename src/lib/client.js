@@ -1,31 +1,97 @@
 import { Peer } from 'peerjs';
+import DOMPurify from 'dompurify';
 import { getRoomCodePeerId, validateRoomCode } from './room-code';
 
 export default class Client {
+  // Public properties
+  username;
+
   // Private properties
+  _onFailure;
   _roomCode;
   _peer;
   _connection;
 
   /**
-   * Sets up a client for an existing room. If the client could not connect,
-   * this object is invalidated.
-   * @param {string} roomCode
+   * Sets up a client for an existing room.
+   * @param {object} configs
+   * @param {string} configs.username
+   * (Required) The client's username.
+   * @param {string} configs.roomCode
+   * (Required) The room code.
+   * @param {function} configs.onConnect
+   * Callback when the client is set up successfully.
+   * @param {function} configs.onFailure
+   * Callback when the client errors or cannot be set up. Passes a single parameter with the reason for error.
    */
-  constructor(roomCode) {
-    // Make sure there is a room code
-    if (!validateRoomCode(roomCode)) {
-      console.error('RoomClient could not be created. Missing/invalid room code from constructor.');
+  constructor({ username, roomCode, onConnect, onFailure }) {
+    // This *should* have been done already, but just in case,
+    // sanitize the username again and check that it is
+    // a non-empty string.
+    this.username = DOMPurify.sanitize(username ?? '');
+    if (this.username === '') {
+      if (typeof onFailure === 'function') {
+        onFailure('Client username is invalid.');
+      }
       return;
     }
 
-    this._roomCode = roomCode;
-    this._peer = new Peer();
-    // RoomClients do not listen for connections,
-    // so there is no need to have a callback for 'connection'.
-    this._peer.on('open', this._on_peer_open.bind(this));
-    this._peer.on('close', this._on_peer_close.bind(this));
-    this._peer.on('error', this._on_peer_error.bind(this));
+    // Make sure there is a valid room code
+    if (!validateRoomCode(roomCode)) {
+      if (typeof onFailure === 'function') {
+        onFailure('Missing/invalid room code.');
+      }
+      return;
+    }
+
+    // Attempt to connect to the room
+    new Promise((resolve, reject) => {
+      const peer = new Peer();
+      // Await peer open and connection made.
+      peer.on('open', () => {
+        // Attempt to connect to the room.
+        const connection = peer.connect(getRoomCodePeerId(roomCode));
+        connection.on('open', () => resolve({ peer, connection }));
+        connection.on('error', () => {
+          peer.destroy();
+          reject('Connection to host failed.')
+        });
+      });
+      peer.on('error', err => {
+        peer.destroy();
+        switch (err.type) {
+          case 'browser-incompatible':
+            reject('Browser is incompatible and cannot make connections.');
+            break;
+          case 'ssl-unavailable':
+            reject('Cannot securely connect to server.');
+            break;
+          case 'peer-unavailable':
+            reject('Could not find room with code ' + roomCode);
+            break;
+          default:
+            reject('Could not connect to room, possibly due to a network error.');
+            break;
+        }
+      });
+    }).then(({ peer, connection }) => {
+      // No need to stay connected to PeerServer once a connection is made.
+      peer.disconnect();
+      this._onFailure = onFailure;
+      this._roomCode = roomCode;
+      this._peer = peer;
+      this._connection = connection;
+      this._connection.on('close', this._on_connection_close.bind(this));
+      this._connection.on('error', this._on_connection_error.bind(this));
+      this._connection.on('data', this._on_connection_data.bind(this));
+      if (typeof onConnect === 'function') {
+        onConnect();
+      }
+    }).catch(reason => {
+      if (typeof onFailure === 'function') {
+        onFailure(reason);
+      }
+    });
   }
 
   /**
@@ -41,40 +107,17 @@ export default class Client {
 
   /**
    * Leaves the room that this object is connected to.
-   * Causes this object to be invalidated.
    */
   leave() {
     this._peer.destroy();
-  }
-
-  _on_peer_open(id) {
-    console.log('CLIENT: My peer ID is: ' + id);
-    console.log('CLIENT: Connecting to', getRoomCodePeerId(this._roomCode));
-    this._connection = this._peer.connect(getRoomCodePeerId(this._roomCode));
-    this._connection.on('open', this._on_connection_open.bind(this));
-    this._connection.on('close', this._on_connection_close.bind(this));
-    this._connection.on('error', this._on_connection_error.bind(this));
-  }
-
-  _on_peer_close() {
-    console.log('CLIENT: Closed');
-  }
-
-  _on_peer_error(err) {
-    console.log('CLIENT: Error:', err.type);
-    this._peer.destroy();
-  }
-
-  _on_connection_open() {
-    console.log('CLIENT: Connection open');
-    // No longer need connection to the PeerServer.
-    this._peer.disconnect();
-    this._connection.on('data', this._on_connection_data.bind(this));
+    console.log(this._connection);
   }
 
   _on_connection_close() {
-    console.log('CLIENT: Connection closed');
     this._peer.destroy();
+    if (typeof this._onFailure === 'function') {
+      this._onFailure('Connection to host was closed.');
+    }
   }
 
   _on_connection_data(data) {
@@ -84,5 +127,8 @@ export default class Client {
   _on_connection_error(err) {
     console.log('CLIENT: connection error:', err);
     this._peer.destroy();
+    if (typeof this._onFailure === 'function') {
+      this._onFailure('Unexpected error with connection to room.');
+    }
   }
 }

@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import { validateRoomCode, Host } from '../lib';
+import { validateRoomCode, Client, Host } from '../lib';
 
 export class Home extends HTMLElement {
   constructor() {
@@ -123,13 +123,15 @@ export class Home extends HTMLElement {
 
   _onJoin() {
     // Check for username.
-    if (this._getUsername().length === 0) {
+    const username = this._getUsername();
+    if (username.length === 0) {
       this._setJoinStatus({ message: 'Invalid username.', isError: true });
       return;
     }
 
     // Check room code and show error if invalid.
-    if (!validateRoomCode(this.querySelector('#room-code').value)) {
+    const roomCode = this.querySelector('#room-code')?.value;
+    if (!validateRoomCode(roomCode)) {
       this._setJoinStatus({ message: 'Invalid room code.\nIt must be 6 letters long.', isError: true });
       return;
     }
@@ -137,7 +139,14 @@ export class Home extends HTMLElement {
     // Attempt to connect.
     this._setDisabled(true);
     this._setJoinStatus({ isHidden: true });
-    document.querySelector('dc-message')?.showMessage?.('Connecting...', { isClosable: false });
+    const message = document.querySelector('dc-message');
+    message?.showMessage?.('Connecting...', { isClosable: false });
+    console.log(new Client({
+      username,
+      roomCode,
+      onConnect: () => message?.showMessage?.('Connected to room!'),
+      onFailure: reason => message?.showMessage?.(reason)
+    }));
   }
 
   _onHost() {
@@ -153,11 +162,11 @@ export class Home extends HTMLElement {
     this._setHostStatus({ isHidden: true });
     const message = document.querySelector('dc-message');
     message?.showMessage?.('Connecting...', { isClosable: false });
-    new Host({
+    console.log(new Host({
       username,
       onOpen: roomCode => message?.showMessage?.('Created room with code ' + roomCode),
-      onFailure: reason => message?.showMessage?.('Failed to set up room:\n' + reason)
-    })
+      onFailure: reason => message?.showMessage?.(reason)
+    }));
   }
 }
 

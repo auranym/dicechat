@@ -14,7 +14,7 @@ export default class Host {
   _clients;
 
   /**
-   * 
+   * Sets up the host for a room.
    * @param {object} configs
    * @param {string} configs.username
    * (Required) The host's username.
@@ -49,7 +49,7 @@ export default class Host {
       // for open connection or error.
       while (tries < 10 && !fatalErrorMessage && !peer) {
         tries += 1;
-        peer = new Peer(roomCode);
+        peer = new Peer(getRoomCodePeerId(roomCode));
         await new Promise(resolve => {
           peer.on('open', resolve);
           peer.on('error', err => {
@@ -70,9 +70,6 @@ export default class Host {
           });
         });
       }
-
-      console.log(peer);
-
       // After while loop, resolve or reject.
       if (fatalErrorMessage) {
         reject(fatalErrorMessage);
@@ -86,7 +83,6 @@ export default class Host {
     }).then(({ roomCode, peer }) => {
       this._onFailure = onFailure;
       this._roomCode = roomCode;
-      console.log(peer);
       this._peer = peer;
       this._clients = {};
       this._peer.on('connection', this._on_peer_connection.bind(this));
@@ -123,7 +119,9 @@ export default class Host {
       connection.close();
     }
     this._peer.destroy();
-    this._onFailure?.('Room was closed.');
+    if (typeof this._onFailure === 'function') {
+      this._onFailure('Room was closed.');
+    }
   }
 
   _on_peer_connection(connection) {
@@ -138,7 +136,9 @@ export default class Host {
   _on_peer_error(err) {
     console.log('HOST: Error:', err.type);
     this._peer.destroy();
-    this._onFailure?.(err.type);
+    if (typeof this._onFailure === 'function') {
+      this._onFailure(err.type);
+    }
   }
 
   _on_connection_open(peerId) {
