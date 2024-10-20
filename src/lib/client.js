@@ -15,7 +15,7 @@ export default class Client {
   /** Time since last ping received from the host. */
   _lastPing;
   /** Interval that checks when the last ping from the host was received. */
-  _pingCheckInterval;
+  _pingInterval;
 
   /**
    * Sets up a client for an existing room.
@@ -96,9 +96,11 @@ export default class Client {
       // This is necessary since if the host closes the browser without
       // closing the room, the connection remains open.
       this._lastPing = Date.now();
-      this._pingCheckInterval = setInterval(() => {
+      this._pingInterval = setInterval(() => {
+        this.send(new DataPacket(DataPacket.PING));
         // If the last ping was more than 5 seconds ago, connection was lost.
         if (Date.now() - this._lastPing > 5000) {
+          console.log('Did not receive ping from host in 5+ seconds');
           this._on_connection_close();
         }
       }, 2000);
@@ -114,7 +116,7 @@ export default class Client {
    * @param {DataPacket} dataPacket DataPacket being sent.
    */
   send(dataPacket) {
-    console.log('CLIENT: sending', JSON.stringify(message, null, 1));
+    console.log('CLIENT: sending', JSON.stringify(dataPacket, null, 1));
     this._connection.send(dataPacket);
   }
 
@@ -123,13 +125,13 @@ export default class Client {
    */
   leave() {
     this._peer.destroy();
-    clearInterval(this._pingCheckInterval);
+    clearInterval(this._pingInterval);
     console.log(this._connection);
   }
 
   _on_connection_close() {
     this._peer.destroy();
-    clearInterval(this._pingCheckInterval);
+    clearInterval(this._pingInterval);
     if (typeof this._onFailure === 'function') {
       this._onFailure('Connection to host was lost.');
     }
@@ -138,7 +140,7 @@ export default class Client {
   _on_connection_error(err) {
     console.log('CLIENT: connection error:', err);
     this._peer.destroy();
-    clearInterval(this._pingCheckInterval);
+    clearInterval(this._pingInterval);
     if (typeof this._onFailure === 'function') {
       this._onFailure('Unexpected error with connection to room.');
     }

@@ -11,8 +11,15 @@ export default class Host {
   _onFailure;
   _roomCode;
   _peer;
-  /** Object whose keys are peer IDs and value is the connection object. */
+
+  /**
+   * Object whose keys are peer IDs and value is and object with the following properties:
+   * - `connection`
+   * - `username`
+   * - `lastPing`
+   */
   _clients;
+
   /** Interval that pings clients. */
   _pingInterval;
 
@@ -94,8 +101,17 @@ export default class Host {
         onOpen(roomCode);
       }
       // Ping clients every now and then
+      // and check for pings back from the client.
       this._pingInterval = setInterval(() => {
         this.send(new DataPacket(DataPacket.PING));
+        for (const client of Object.values(this._clients)) {
+          if (Date.now() - client.lastPing > 5000) {
+            // Client did not ping in 5 seconds,
+            // so assume the connection has been lost.
+            console.log('Did not receive ping from client in 5+ secs');
+            client.connection.close();
+          }
+        }
       }, 2000);
     }).catch(reason => {
       if (typeof onFailure === 'function') {
@@ -116,8 +132,8 @@ export default class Host {
       dataPacket.content = DOMPurify.sanitize(dataPacket.content);
     }
     console.log('HOST: sending to group:', JSON.stringify(dataPacket, null, 1));
-    for (const connection of Object.values(this._clients)) {
-      connection.send(dataPacket);
+    for (const client of Object.values(this._clients)) {
+      client.connection.send(dataPacket);
     }
   }
 
@@ -125,8 +141,8 @@ export default class Host {
    * Disconnects all clients and destroys the host peer.
    */
   close() {
-    for (const connection of Object.values(this._clients)) {
-      connection.close();
+    for (const client of Object.values(this._clients)) {
+      client.connection.close();
     }
     this._peer.destroy();
     clearInterval(this._pingInterval);
@@ -138,7 +154,7 @@ export default class Host {
   _on_peer_connection(connection) {
     const peerId = connection.peer;
     console.log('HOST: Connected to client', peerId);
-    this._clients[peerId] = connection;
+    this._clients[peerId] = { connection, lastPing: Date.now() };
     connection.on('open', this._on_connection_open.bind(this, peerId));
     connection.on('close', this._on_connection_close.bind(this, peerId));
     connection.on('error', this._on_connection_error.bind(this, peerId));
@@ -155,7 +171,7 @@ export default class Host {
 
   _on_connection_open(peerId) {
     console.log('HOST: Connection ready to use for client', peerId);
-    this._clients[peerId].on('data', this._on_connection_data.bind(this, peerId));
+    this._clients[peerId].connection.on('data', this._on_connection_data.bind(this, peerId));
   }
 
   _on_connection_close(peerId) {
@@ -169,5 +185,12 @@ export default class Host {
   
   _on_connection_data(id, data) {
     console.log('HOST: received from', id, ':', JSON.stringify(data, null, 1));
+    // Handle different types of data packets.
+    const dataPacket = DataPacket.parse(data);
+    switch (dataPacket.type) {
+      case DataPacket.PING: {
+        this._clients[id].lastPing = Date.now();
+      }
+    }
   }
 }
