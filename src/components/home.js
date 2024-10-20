@@ -139,13 +139,13 @@ export class Home extends HTMLElement {
     // Attempt to connect.
     this._setDisabled(true);
     this._setJoinStatus({ isHidden: true });
-    const message = document.querySelector('dc-message');
-    message?.showMessage?.('Connecting...', { isClosable: false });
+    const alert = document.querySelector('dc-alert');
+    alert?.showAlert?.('Connecting...', { isClosable: false });
     console.log(new Client({
       username,
       roomCode,
-      onConnect: () => message?.showMessage?.('Connected to room!'),
-      onFailure: reason => message?.showMessage?.(reason)
+      onConnect: () => alert?.showAlert?.('Connected to room!'),
+      onFailure: reason => alert?.showAlert?.(reason)
     }));
   }
 
@@ -160,12 +160,12 @@ export class Home extends HTMLElement {
     // Attempt to connect
     this._setDisabled(true);
     this._setHostStatus({ isHidden: true });
-    const message = document.querySelector('dc-message');
-    message?.showMessage?.('Connecting...', { isClosable: false });
+    const alert = document.querySelector('dc-alert');
+    alert?.showAlert?.('Connecting...', { isClosable: false });
     console.log(new Host({
       username,
-      onOpen: roomCode => message?.showMessage?.('Created room with code ' + roomCode),
-      onFailure: reason => message?.showMessage?.(reason)
+      onOpen: roomCode => alert?.showAlert?.('Created room with code ' + roomCode),
+      onFailure: reason => alert?.showAlert?.(reason)
     }));
   }
 }

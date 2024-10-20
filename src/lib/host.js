@@ -1,6 +1,7 @@
 import { Peer } from 'peerjs';
 import DOMPurify from 'dompurify';
 import { generateRoomCode, getRoomCodePeerId, validateRoomCode } from './room-code';
+import DataPacket from './data-packet';
 
 export default class Host {
   // Public properties
@@ -12,6 +13,8 @@ export default class Host {
   _peer;
   /** Object whose keys are peer IDs and value is the connection object. */
   _clients;
+  /** Interval that pings clients. */
+  _pingInterval;
 
   /**
    * Sets up the host for a room.
@@ -90,6 +93,10 @@ export default class Host {
       if (typeof onOpen === 'function') {
         onOpen(roomCode);
       }
+      // Ping clients every now and then
+      this._pingInterval = setInterval(() => {
+        this.send(new DataPacket(DataPacket.PING));
+      }, 2000);
     }).catch(reason => {
       if (typeof onFailure === 'function') {
         onFailure(reason);
@@ -98,16 +105,19 @@ export default class Host {
   }
 
   /**
-   * Sends a message to the room to be displayed in the RoomChat
+   * Sends a data packet to the room to be displayed in the RoomChat
    * for all users.
-   * This function sanitizes the message and also performs any
+   * This function sanitizes content and also performs any
    * commands associated with the message.
-   * @param {string} message Message being sent.
+   * @param {DataPacket} dataPacket Message being sent.
    */
-  send(message) {
-    console.log('HOST: sending to group:', JSON.stringify(DOMPurify.sanitize(message), null, 1));
+  send(dataPacket) {
+    if (dataPacket.content) { 
+      dataPacket.content = DOMPurify.sanitize(dataPacket.content);
+    }
+    console.log('HOST: sending to group:', JSON.stringify(dataPacket, null, 1));
     for (const connection of Object.values(this._clients)) {
-      connection.send(DOMPurify.sanitize(message));
+      connection.send(dataPacket);
     }
   }
 
@@ -119,6 +129,7 @@ export default class Host {
       connection.close();
     }
     this._peer.destroy();
+    clearInterval(this._pingInterval);
     if (typeof this._onFailure === 'function') {
       this._onFailure('Room was closed.');
     }
@@ -136,6 +147,7 @@ export default class Host {
   _on_peer_error(err) {
     console.log('HOST: Error:', err.type);
     this._peer.destroy();
+    clearInterval(this._pingInterval);
     if (typeof this._onFailure === 'function') {
       this._onFailure(err.type);
     }
@@ -151,11 +163,11 @@ export default class Host {
     delete this._clients[peerId];
   }
 
-  _on_connection_data(id, data) {
-    console.log('HOST: received from', id, ':', JSON.stringify(data, null, 1));
-  }
-
   _on_connection_error(id, err) {
     console.log('HOST: connection error from', id, ':', err);
+  }
+  
+  _on_connection_data(id, data) {
+    console.log('HOST: received from', id, ':', JSON.stringify(data, null, 1));
   }
 }

@@ -1,4 +1,4 @@
-export class Message extends HTMLElement {
+export class Alert extends HTMLElement {
   constructor() {
     super();
     this.render();
@@ -10,7 +10,7 @@ export class Message extends HTMLElement {
       <div class="hflex align-center justify-space-between">
         <p>Hello world!</p>
         <form method="dialog">
-          <button autofocus aria-label="Close message" class="hinflex align-center gap-sm">
+          <button autofocus aria-label="Close" class="hinflex align-center gap-sm">
             <dc-icon icon="x"></dc-icon>
           </button>
         </form>
@@ -19,20 +19,20 @@ export class Message extends HTMLElement {
     `;
   }
 
-  showMessage(message, { color = '', isClosable = true } = {}) {
+  showAlert(alert, { color = '', isClosable = true } = {}) {
     const dialog = this.querySelector('dialog');
     const p = this.querySelector('p');
     const form = this.querySelector('form');
 
     if (!(dialog && p && form)) {
-      console.warn('Could not show message');
+      console.warn('Could not show alert');
       if (dialog?.open) {
         dialog.close();
       }
       return;
     }
 
-    p.innerText = message;
+    p.innerText = alert;
     if (color === 'red' || color === 'blue') {
       p.className = 'text-' + color;
     }
@@ -46,11 +46,11 @@ export class Message extends HTMLElement {
     }
   }
 
-  hideMessage() {
+  hideAlert() {
     if (dialog.open) {
       dialog.close();
     }
   }
 }
 
-customElements.define('dc-message', Message);
+customElements.define('dc-alert', Alert);

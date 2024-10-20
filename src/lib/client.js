@@ -1,6 +1,7 @@
 import { Peer } from 'peerjs';
 import DOMPurify from 'dompurify';
 import { getRoomCodePeerId, validateRoomCode } from './room-code';
+import DataPacket from './data-packet';
 
 export default class Client {
   // Public properties
@@ -11,6 +12,10 @@ export default class Client {
   _roomCode;
   _peer;
   _connection;
+  /** Time since last ping received from the host. */
+  _lastPing;
+  /** Interval that checks when the last ping from the host was received. */
+  _pingCheckInterval;
 
   /**
    * Sets up a client for an existing room.
@@ -87,6 +92,16 @@ export default class Client {
       if (typeof onConnect === 'function') {
         onConnect();
       }
+      // Start an interval that pings the host every so often.
+      // This is necessary since if the host closes the browser without
+      // closing the room, the connection remains open.
+      this._lastPing = Date.now();
+      this._pingCheckInterval = setInterval(() => {
+        // If the last ping was more than 5 seconds ago, connection was lost.
+        if (Date.now() - this._lastPing > 5000) {
+          this._on_connection_close();
+        }
+      }, 2000);
     }).catch(reason => {
       if (typeof onFailure === 'function') {
         onFailure(reason);
@@ -95,14 +110,12 @@ export default class Client {
   }
 
   /**
-   * Sends a message to the RoomHost, to be displayed in the RoomChat.
-   * This function does not cause the message to be displayed immediately,
-   * as it first must reach the RoomHost, where it is also sanitized.
-   * @param {string} message Message being sent.
+   * Sends a data packet to the RoomHost.
+   * @param {DataPacket} dataPacket DataPacket being sent.
    */
-  send(message) {
+  send(dataPacket) {
     console.log('CLIENT: sending', JSON.stringify(message, null, 1));
-    this._connection.send(message);
+    this._connection.send(dataPacket);
   }
 
   /**
@@ -110,25 +123,35 @@ export default class Client {
    */
   leave() {
     this._peer.destroy();
+    clearInterval(this._pingCheckInterval);
     console.log(this._connection);
   }
 
   _on_connection_close() {
     this._peer.destroy();
+    clearInterval(this._pingCheckInterval);
     if (typeof this._onFailure === 'function') {
-      this._onFailure('Connection to host was closed.');
+      this._onFailure('Connection to host was lost.');
     }
-  }
-
-  _on_connection_data(data) {
-    console.log('CLIENT: received', JSON.stringify(data, null, 1));
   }
 
   _on_connection_error(err) {
     console.log('CLIENT: connection error:', err);
     this._peer.destroy();
+    clearInterval(this._pingCheckInterval);
     if (typeof this._onFailure === 'function') {
       this._onFailure('Unexpected error with connection to room.');
+    }
+  }
+
+  _on_connection_data(data) {
+    console.log('CLIENT: received', JSON.stringify(data, null, 1));
+    // Handle different types of data packets.
+    const dataPacket = DataPacket.parse(data);
+    switch (dataPacket.type) {
+      case DataPacket.PING: {
+        this._lastPing = Date.now();
+      }
     }
   }
 }

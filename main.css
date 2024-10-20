@@ -39,7 +39,7 @@ body {
 }
 
 main,
-dc-message {
+dc-alert {
   width: min(400px, calc(100vw - 2 * var(--space-md)));
 }
 
@@ -150,7 +150,7 @@ dc-chat p {
   margin: 0;
 }
 
-dc-message {
+dc-alert {
   position: sticky;
   top: var(--space-sm);
 }
