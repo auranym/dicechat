@@ -1,9 +1,16 @@
 export default class DataPacket {
   // Types of packets
+  /** Default type. Ususally used when there is an error. */
   static get NONE() { return 0; };
+  /** Used for host and clients to test connections. */
   static get PING() { return 1; };
-  static get MESSAGE() { return 2; };
-  static get USERNAME() { return 3; };
+  /**
+   * Sent when a client first joins the room.
+   * If sent by a client, content is the requested username.
+   * Host will respond with assigned username.
+   */
+  static get USERNAME() { return 2; };
+  static get MESSAGE() { return 3; };
 
   /**
    * @param {*} data Data packet sent over a PeerJS connection.

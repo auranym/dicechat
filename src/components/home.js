@@ -144,7 +144,7 @@ export class Home extends HTMLElement {
     console.log(new Client({
       username,
       roomCode,
-      onConnect: () => alert?.showAlert?.('Connected to room!'),
+      onConnected: () => alert?.showAlert?.('Connected to room!'),
       onFailure: reason => alert?.showAlert?.(reason)
     }));
   }

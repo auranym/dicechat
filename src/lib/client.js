@@ -8,6 +8,7 @@ export default class Client {
   username;
 
   // Private properties
+  _onConnected;
   _onFailure;
   _roomCode;
   _peer;
@@ -29,7 +30,7 @@ export default class Client {
    * @param {function} configs.onFailure
    * Callback when the client errors or cannot be set up. Passes a single parameter with the reason for error.
    */
-  constructor({ username, roomCode, onConnect, onFailure }) {
+  constructor({ username, roomCode, onConnected, onFailure }) {
     // This *should* have been done already, but just in case,
     // sanitize the username again and check that it is
     // a non-empty string.
@@ -49,66 +50,23 @@ export default class Client {
       return;
     }
 
-    // Attempt to connect to the room
-    new Promise((resolve, reject) => {
-      const peer = new Peer();
-      // Await peer open and connection made.
-      peer.on('open', () => {
-        // Attempt to connect to the room.
-        const connection = peer.connect(getRoomCodePeerId(roomCode));
-        connection.on('open', () => resolve({ peer, connection }));
-        connection.on('error', () => {
-          peer.destroy();
-          reject('Connection to host failed.')
-        });
-      });
-      peer.on('error', err => {
-        peer.destroy();
-        switch (err.type) {
-          case 'browser-incompatible':
-            reject('Browser is incompatible and cannot make connections.');
-            break;
-          case 'ssl-unavailable':
-            reject('Cannot securely connect to server.');
-            break;
-          case 'peer-unavailable':
-            reject('Could not find room with code ' + roomCode);
-            break;
-          default:
-            reject('Could not connect to room, possibly due to a network error.');
-            break;
-        }
-      });
-    }).then(({ peer, connection }) => {
-      // No need to stay connected to PeerServer once a connection is made.
-      peer.disconnect();
-      this._onFailure = onFailure;
-      this._roomCode = roomCode;
-      this._peer = peer;
-      this._connection = connection;
-      this._connection.on('close', this._on_connection_close.bind(this));
-      this._connection.on('error', this._on_connection_error.bind(this));
-      this._connection.on('data', this._on_connection_data.bind(this));
-      if (typeof onConnect === 'function') {
-        onConnect();
-      }
-      // Start an interval that pings the host every so often.
-      // This is necessary since if the host closes the browser without
-      // closing the room, the connection remains open.
-      this._lastPing = Date.now();
-      this._pingInterval = setInterval(() => {
-        this.send(new DataPacket(DataPacket.PING));
-        // If the last ping was more than 5 seconds ago, connection was lost.
-        if (Date.now() - this._lastPing > 5000) {
-          console.log('Did not receive ping from host in 5+ seconds');
-          this._on_connection_close();
-        }
-      }, 2000);
-    }).catch(reason => {
-      if (typeof onFailure === 'function') {
-        onFailure(reason);
-      }
-    });
+    // Assign properties
+    this._onConnected = onConnected;
+    this._onFailure = onFailure;
+    this._roomCode = roomCode;
+    // Create the peer!
+    this._peer = new Peer();
+    this._peer.on('open', this._on_peer_open.bind(this));
+    this._peer.on('error', this._on_peer_error.bind(this));
+
+    // Joining a room involves the following steps,
+    // after which, onConnected is called. If any step
+    // fails, onFailure is called with the reason (string).
+    //
+    // 1. Attempt to create a Peer (above)
+    // 2. Attempt to connect to the room (in _on_peer_open)
+    // 3. Request a username (in _on_connection_open)
+    // 4. Receive assigned username from the host (in _on_connection_data)
   }
 
   /**
@@ -125,8 +83,69 @@ export default class Client {
    */
   leave() {
     this._peer.destroy();
-    clearInterval(this._pingInterval);
-    console.log(this._connection);
+    if (this._pingInterval) {
+      clearInterval(this._pingInterval);
+    }
+  }
+
+  _on_successfully_joined() {
+    // Start an interval that pings the host every so often.
+    // This is necessary since if the host closes the browser without
+    // closing the room, the connection remains open.
+    this._lastPing = Date.now();
+    this._pingInterval = setInterval(() => {
+      this.send(new DataPacket(DataPacket.PING));
+      // If the last ping was more than 5 seconds ago, connection was lost.
+      if (Date.now() - this._lastPing > 5000) {
+        console.log('Did not receive ping from host in 5+ seconds');
+        this._on_connection_close();
+      }
+    }, 2000);
+
+    if (typeof this._onConnected === 'function') {
+      this._onConnected();
+    }
+  }
+
+  _on_peer_open() {
+    this._connection = this._peer.connect(getRoomCodePeerId(this._roomCode));
+    this._connection.on('open', this._on_connection_open.bind(this));
+    this._connection.on('error', this._on_connection_error.bind(this));
+  }
+
+  _on_peer_error(err) {
+    const closeAndError = msg => {
+      this.leave();
+      if (typeof this._onFailure === 'function') {
+        this._onFailure(msg);
+      }
+    }
+
+    this._peer.destroy();
+    switch (err.type) {
+      case 'browser-incompatible':
+        closeAndError('Browser is incompatible and cannot make connections.');
+        break;
+      case 'ssl-unavailable':
+        closeAndError('Cannot securely connect to server.');
+        break;
+      case 'peer-unavailable':
+        closeAndError('Could not find room with code ' + this._roomCode);
+        break;
+      default:
+        closeAndError('Could not connect to room, possibly due to a network error.');
+        break;
+    }
+  }
+
+  _on_connection_open() {
+    // No need to stay connected to PeerServer once a connection is made.
+    this._peer.disconnect();
+    this._connection.on('close', this._on_connection_close.bind(this));
+    this._connection.on('data', this._on_connection_data.bind(this));
+    this._on_successfully_joined();
+    // Send a USERNAME packet to request a username
+    // this.send(new DataPacket(DataPacket.USERNAME, this.username));
   }
 
   _on_connection_close() {
@@ -153,6 +172,14 @@ export default class Client {
     switch (dataPacket.type) {
       case DataPacket.PING: {
         this._lastPing = Date.now();
+        break;
+      }
+      // ASSUMPTION:
+      // This is only ever reached once.
+      case DataPacket.USERNAME: {
+        this.username = dataPacket.content;
+        // this._on_successfully_joined();
+        break;
       }
     }
   }
