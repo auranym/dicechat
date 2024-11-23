@@ -143,9 +143,9 @@ export default class Client {
     this._peer.disconnect();
     this._connection.on('close', this._on_connection_close.bind(this));
     this._connection.on('data', this._on_connection_data.bind(this));
-    this._on_successfully_joined();
-    // Send a USERNAME packet to request a username
-    // this.send(new DataPacket(DataPacket.USERNAME, this.username));
+    // Send a USERNAME packet to request a username.
+    // This is only performed when the connection is first established.
+    this.send(new DataPacket(DataPacket.USERNAME, this.username));
   }
 
   _on_connection_close() {
@@ -178,7 +178,7 @@ export default class Client {
       // This is only ever reached once.
       case DataPacket.USERNAME: {
         this.username = dataPacket.content;
-        // this._on_successfully_joined();
+        this._on_successfully_joined();
         break;
       }
     }

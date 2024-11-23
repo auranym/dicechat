@@ -102,6 +102,36 @@ export default class Host {
     this._peer.on('error', this._on_peer_error.bind(this));
   }
 
+  /**
+   * Searches through current clients and checks for
+   * any overlaps with `username`. If there are none,
+   * then `username` is returned. If there are overlaps,
+   * then a number is added to the end of the username
+   * before being returned.
+   * @param {string} username 
+   */
+  _get_new_safe_username(username) {
+    const usernames = {
+      [this.username]: true
+    };
+    for (const client of Object.values(this._clients)) {
+      if (client.username) {
+        usernames[client.username] = true;
+      }
+    }
+    // This may be unsafe...
+    // and it's definitely not efficient,
+    // but this is app is for small groups.
+    // If this becomes a problem, then rework this.
+    let num = 1;
+    let newUsername = username;
+    while (usernames[newUsername]) {
+      num += 1;
+      newUsername = username + num;
+    }
+    return newUsername;
+  }
+
   _on_peer_open() {
     // If we reach here, then the room code was valid!
     this._peer.on('connection', this._on_peer_connection.bind(this));
@@ -202,6 +232,18 @@ export default class Host {
     switch (dataPacket.type) {
       case DataPacket.PING: {
         this._clients[id].lastPing = Date.now();
+        break;
+      }
+      // This case occurs when a client successfully connects to a room
+      // and they request a username. The current usernames are compared,
+      // and if there are any collisions, a number is appended
+      // to the requested username, which is sent back to the client.
+      case DataPacket.USERNAME: {
+        this._clients[id].username = this._get_new_safe_username(dataPacket.content);
+        this._clients[id].connection.send(
+          new DataPacket(DataPacket.USERNAME, this._clients[id].username)
+        );
+        break;
       }
     }
   }
