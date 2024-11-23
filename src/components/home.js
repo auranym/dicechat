@@ -145,7 +145,8 @@ export class Home extends HTMLElement {
       username,
       roomCode,
       onConnected: () => alert?.showAlert?.('Connected to room!'),
-      onFailure: reason => alert?.showAlert?.(reason)
+      onFailure: reason => alert?.showAlert?.(reason),
+      onMessage: message => console.log(message)
     }));
   }
 
@@ -165,7 +166,8 @@ export class Home extends HTMLElement {
     console.log(new Host({
       username,
       onOpen: roomCode => alert?.showAlert?.('Created room with code ' + roomCode),
-      onFailure: reason => alert?.showAlert?.(reason)
+      onFailure: reason => alert?.showAlert?.(reason),
+      onMessage: (username, message) => console.log(`${username}: ${message}`)
     }));
   }
 }

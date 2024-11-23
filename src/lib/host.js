@@ -10,6 +10,7 @@ export default class Host {
   // Private properties
   _onOpen;
   _onFailure;
+  _onMessage;
   _roomCode;
   _roomCodeTries;
   _peer;
@@ -34,8 +35,10 @@ export default class Host {
    * Callback when the host is set up successfully. Passes a single parameter with the room code.
    * @param {function} configs.onFailure
    * Callback when the host errors or cannot be set up. Passes a single parameter with the reason for error.
+   * @param {function} configs.onMessage
+   * Callback when a message is received from the host. Passes a two string parameters: username and message.
   */
-  constructor({ username, onOpen, onFailure }) {
+  constructor({ username, onOpen, onFailure, onMessage }) {
     // This *should* have been done already, but just in case,
     // sanitize the username again and check that it is
     // a non-empty string.
@@ -50,6 +53,7 @@ export default class Host {
     // Assign properties
     this._onOpen = onOpen;
     this._onFailure = onFailure;
+    this._onMessage = onMessage;
     this._roomCodeTries = 0;
     this._clients = {};
 
@@ -73,7 +77,7 @@ export default class Host {
     if (dataPacket.content) { 
       dataPacket.content = DOMPurify.sanitize(dataPacket.content);
     }
-    console.log('HOST: sending to group:', JSON.stringify(dataPacket, null, 1));
+    // console.log('HOST: sending to group:', JSON.stringify(dataPacket, null, 1));
     for (const client of Object.values(this._clients)) {
       client.connection.send(dataPacket);
     }
@@ -226,7 +230,7 @@ export default class Host {
   }
   
   _on_connection_data(id, data) {
-    console.log('HOST: received from', id, ':', JSON.stringify(data, null, 1));
+    // console.log('HOST: received from', id, ':', JSON.stringify(data, null, 1));
     // Handle different types of data packets.
     const dataPacket = DataPacket.parse(data);
     switch (dataPacket.type) {
@@ -243,6 +247,12 @@ export default class Host {
         this._clients[id].connection.send(
           new DataPacket(DataPacket.USERNAME, this._clients[id].username)
         );
+        break;
+      }
+      case DataPacket.MESSAGE: {
+        if (typeof this._onMessage === 'function') {
+          this._onMessage(this._clients[id].username, dataPacket.content);
+        }
         break;
       }
     }

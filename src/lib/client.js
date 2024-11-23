@@ -10,6 +10,7 @@ export default class Client {
   // Private properties
   _onConnected;
   _onFailure;
+  _onMessage;
   _roomCode;
   _peer;
   _connection;
@@ -29,8 +30,10 @@ export default class Client {
    * Callback when the client is set up successfully.
    * @param {function} configs.onFailure
    * Callback when the client errors or cannot be set up. Passes a single parameter with the reason for error.
+   * @param {function} configs.onMessage
+   * Callback when a message is received from the host. Passes a single string parameter.
    */
-  constructor({ username, roomCode, onConnected, onFailure }) {
+  constructor({ username, roomCode, onConnected, onFailure, onMessage }) {
     // This *should* have been done already, but just in case,
     // sanitize the username again and check that it is
     // a non-empty string.
@@ -53,6 +56,7 @@ export default class Client {
     // Assign properties
     this._onConnected = onConnected;
     this._onFailure = onFailure;
+    this._onMessage = onMessage;
     this._roomCode = roomCode;
     // Create the peer!
     this._peer = new Peer();
@@ -74,7 +78,7 @@ export default class Client {
    * @param {DataPacket} dataPacket DataPacket being sent.
    */
   send(dataPacket) {
-    console.log('CLIENT: sending', JSON.stringify(dataPacket, null, 1));
+    // console.log('CLIENT: sending', JSON.stringify(dataPacket, null, 1));
     this._connection.send(dataPacket);
   }
 
@@ -166,7 +170,7 @@ export default class Client {
   }
 
   _on_connection_data(data) {
-    console.log('CLIENT: received', JSON.stringify(data, null, 1));
+    // console.log('CLIENT: received', JSON.stringify(data, null, 1));
     // Handle different types of data packets.
     const dataPacket = DataPacket.parse(data);
     switch (dataPacket.type) {
@@ -179,6 +183,12 @@ export default class Client {
       case DataPacket.USERNAME: {
         this.username = dataPacket.content;
         this._on_successfully_joined();
+        break;
+      }
+      case DataPacket.MESSAGE: {
+        if (typeof this._onMessage === 'function') {
+          this._onMessage(dataPacket.content);
+        }
         break;
       }
     }
