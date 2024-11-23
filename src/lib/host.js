@@ -8,8 +8,10 @@ export default class Host {
   username;
 
   // Private properties
+  _onOpen;
   _onFailure;
   _roomCode;
+  _roomCodeTries;
   _peer;
 
   /**
@@ -32,7 +34,7 @@ export default class Host {
    * Callback when the host is set up successfully. Passes a single parameter with the room code.
    * @param {function} configs.onFailure
    * Callback when the host errors or cannot be set up. Passes a single parameter with the reason for error.
-   */
+  */
   constructor({ username, onOpen, onFailure }) {
     // This *should* have been done already, but just in case,
     // sanitize the username again and check that it is
@@ -45,79 +47,19 @@ export default class Host {
       return;
     }
 
-    // Generate room code and set up Peer.
-    // If there is a room code conflict, try again
-    // with a max of 10 attempts.
-    new Promise(async (resolve, reject) => {
-      // Generate a room code and init tries.
-      let roomCode = generateRoomCode(),
-        peer = null,
-        tries = 0,
-        fatalErrorMessage = '';
-      
-      // Attempt to set up the Peer and await
-      // for open connection or error.
-      while (tries < 10 && !fatalErrorMessage && !peer) {
-        tries += 1;
-        peer = new Peer(getRoomCodePeerId(roomCode));
-        await new Promise(resolve => {
-          peer.on('open', resolve);
-          peer.on('error', err => {
-            switch (err.type) {
-              case 'browser-incompatible':
-                fatalErrorMessage = 'Browser is incompatible and cannot make connections.';
-                break;
-              case 'ssl-unavailable':
-                fatalErrorMessage = 'Cannot securely connect to server.';
-                break;
-              case 'unavailable-id':
-                roomCode = generateRoomCode();
-                break;
-            }
-            peer.destroy();
-            peer = null;
-            resolve();
-          });
-        });
-      }
-      // After while loop, resolve or reject.
-      if (fatalErrorMessage) {
-        reject(fatalErrorMessage);
-      }
-      else if (!peer) {
-        reject('Unable to create a room. The server could not be reached or a room code could not be generated.');
-      }
-      else {
-        resolve({ roomCode, peer });
-      }
-    }).then(({ roomCode, peer }) => {
-      this._onFailure = onFailure;
-      this._roomCode = roomCode;
-      this._peer = peer;
-      this._clients = {};
-      this._peer.on('connection', this._on_peer_connection.bind(this));
-      this._peer.on('error', this._on_peer_error.bind(this));
-      if (typeof onOpen === 'function') {
-        onOpen(roomCode);
-      }
-      // Ping clients every now and then
-      // and check for pings back from the client.
-      this._pingInterval = setInterval(() => {
-        this.send(new DataPacket(DataPacket.PING));
-        for (const client of Object.values(this._clients)) {
-          if (Date.now() - client.lastPing > 5000) {
-            // Client did not ping in 5 seconds,
-            // so assume the connection has been lost.
-            console.log('Did not receive ping from client in 5+ secs');
-            client.connection.close();
-          }
-        }
-      }, 2000);
-    }).catch(reason => {
-      if (typeof onFailure === 'function') {
-        onFailure(reason);
-      }
-    });
+    // Assign properties
+    this._onOpen = onOpen;
+    this._onFailure = onFailure;
+    this._roomCodeTries = 0;
+    this._clients = {};
+
+    // Hosting a room involves the following steps,
+    // after which, onOpen is called. If any step fails,
+    // onFailure is called with the reason (string).
+    //
+    // 1. Generate a room code and attempt to create a peer using it. (_setup)
+    // 2. If 2 fails because of unavailable-id, retry 1 nine more times. (_on_peer_error)
+    this._setup();
   }
 
   /**
@@ -151,6 +93,37 @@ export default class Host {
     }
   }
 
+  _setup() {
+    // Assume this is a number...
+    this._roomCodeTries += 1;
+    this._roomCode = generateRoomCode();
+    this._peer = new Peer(getRoomCodePeerId(this._roomCode));
+    this._peer.on('open', this._on_peer_open.bind(this));
+    this._peer.on('error', this._on_peer_error.bind(this));
+  }
+
+  _on_peer_open() {
+    // If we reach here, then the room code was valid!
+    this._peer.on('connection', this._on_peer_connection.bind(this));
+    if (typeof this._onOpen === 'function') {
+      this._onOpen(this._roomCode);
+    }
+    
+    // Ping clients every now and then
+    // and check for pings back from the client.
+    this._pingInterval = setInterval(() => {
+      this.send(new DataPacket(DataPacket.PING));
+      for (const client of Object.values(this._clients)) {
+        if (Date.now() - client.lastPing > 5000) {
+          // Client did not ping in 5 seconds,
+          // so assume the connection has been lost.
+          console.log('Did not receive ping from client in 5+ secs');
+          client.connection.close();
+        }
+      }
+    }, 2000);
+  }
+
   _on_peer_connection(connection) {
     const peerId = connection.peer;
     console.log('HOST: Connected to client', peerId);
@@ -162,10 +135,49 @@ export default class Host {
 
   _on_peer_error(err) {
     console.log('HOST: Error:', err.type);
+    let fatalErrorMessage;
+    let unavailableId = false;
+    switch (err.type) {
+      // I am assuming that we only *need* to call onFailure
+      // when the type is fatal, and I am also making some
+      // judgement calls about which non-fatal errors are
+      // fatal for this app.
+      // The default case is "nothing happens"
+      case 'browser-incompatible':
+        fatalErrorMessage = 'Browser is incompatible and cannot make connections.';
+        break;
+      case 'network':
+      case 'server-error':
+      case 'ssl-unavailable':
+        fatalErrorMessage = 'Error with connecting to the server.';
+        break;
+      case 'socket-error':
+      case 'socket-closed':
+        fatalErrorMessage = 'Error with underlying socket.';
+        break;
+      case 'unavailable-id':
+        unavailableId = true;
+        if (this._roomCodeTries >= 10) {
+          fatalErrorMessage = 'Could not create a valid room code. Try again later.';
+        }
+        break;
+    }
+
     this._peer.destroy();
-    clearInterval(this._pingInterval);
-    if (typeof this._onFailure === 'function') {
-      this._onFailure(err.type);
+    this._peer = null;
+    if (this._pingInterval) {
+      clearInterval(this._pingInterval);
+    }
+
+    // Quit here if the error message is fatal
+    if (fatalErrorMessage) {
+      if (typeof this._onFailure === 'function') {
+        this._onFailure(fatalErrorMessage);
+      }
+    }
+    // Try setting up again if unavailableId was not fatal.
+    else if (unavailableId) {
+      this._setup();
     }
   }
 
