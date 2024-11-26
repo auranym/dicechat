@@ -67,20 +67,11 @@ export default class Host {
   }
 
   /**
-   * Sends a data packet to the room to be displayed in the RoomChat
-   * for all users.
-   * This function sanitizes content and also performs any
-   * commands associated with the message.
-   * @param {DataPacket} dataPacket Message being sent.
+   * Sends a message to all clients in the room.
+   * @param {string} message 
    */
-  send(dataPacket) {
-    if (dataPacket.content) { 
-      dataPacket.content = DOMPurify.sanitize(dataPacket.content);
-    }
-    // console.log('HOST: sending to group:', JSON.stringify(dataPacket, null, 1));
-    for (const client of Object.values(this._clients)) {
-      client.connection.send(dataPacket);
-    }
+  send(message) {
+    this._send_packet(new DataPacket(DataPacket.MESSAGE, message));
   }
 
   /**
@@ -136,6 +127,22 @@ export default class Host {
     return newUsername;
   }
 
+  /**
+   * Sends a data packet to all clients in the room.
+   * This function sanitizes content and also performs any
+   * commands associated with the message.
+   * @param {DataPacket} dataPacket Message being sent.
+   */
+  _send_packet(dataPacket) {
+    if (dataPacket.content) { 
+      dataPacket.content = DOMPurify.sanitize(dataPacket.content);
+    }
+    // console.log('HOST: sending to group:', JSON.stringify(dataPacket, null, 1));
+    for (const client of Object.values(this._clients)) {
+      client.connection.send(dataPacket);
+    }
+  }
+
   _on_peer_open() {
     // If we reach here, then the room code was valid!
     this._peer.on('connection', this._on_peer_connection.bind(this));
@@ -146,9 +153,9 @@ export default class Host {
     // Ping clients every now and then
     // and check for pings back from the client.
     this._pingInterval = setInterval(() => {
-      this.send(new DataPacket(DataPacket.PING));
+      this._send_packet(new DataPacket(DataPacket.PING));
       for (const client of Object.values(this._clients)) {
-        if (Date.now() - client.lastPing > 5000) {
+        if (client.connection.open && Date.now() - client.lastPing > 5000) {
           // Client did not ping in 5 seconds,
           // so assume the connection has been lost.
           console.log('Did not receive ping from client in 5+ secs');
@@ -161,7 +168,7 @@ export default class Host {
   _on_peer_connection(connection) {
     const peerId = connection.peer;
     console.log('HOST: Connected to client', peerId);
-    this._clients[peerId] = { connection, lastPing: Date.now() };
+    this._clients[peerId] = { connection };
     connection.on('open', this._on_connection_open.bind(this, peerId));
     connection.on('close', this._on_connection_close.bind(this, peerId));
     connection.on('error', this._on_connection_error.bind(this, peerId));
@@ -217,6 +224,7 @@ export default class Host {
 
   _on_connection_open(peerId) {
     console.log('HOST: Connection ready to use for client', peerId);
+    this._clients[peerId].lastPing = Date.now();
     this._clients[peerId].connection.on('data', this._on_connection_data.bind(this, peerId));
   }
 

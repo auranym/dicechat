@@ -74,12 +74,11 @@ export default class Client {
   }
 
   /**
-   * Sends a data packet to the RoomHost.
-   * @param {DataPacket} dataPacket DataPacket being sent.
+   * Sends a message to the host.
+   * @param {string} message
    */
-  send(dataPacket) {
-    // console.log('CLIENT: sending', JSON.stringify(dataPacket, null, 1));
-    this._connection.send(dataPacket);
+  send(message) {
+    this._send_packet(new DataPacket(DataPacket.MESSAGE, message));
   }
 
   /**
@@ -91,6 +90,16 @@ export default class Client {
       clearInterval(this._pingInterval);
     }
   }
+  /**
+   * Sends a data packet to the host.
+   * @param {DataPacket} dataPacket DataPacket being sent.
+   */
+  _send_packet(dataPacket) {
+    if (dataPacket.content) { 
+      dataPacket.content = DOMPurify.sanitize(dataPacket.content);
+    }
+    this._connection.send(dataPacket);
+  }
 
   _on_successfully_joined() {
     // Start an interval that pings the host every so often.
@@ -98,7 +107,7 @@ export default class Client {
     // closing the room, the connection remains open.
     this._lastPing = Date.now();
     this._pingInterval = setInterval(() => {
-      this.send(new DataPacket(DataPacket.PING));
+      this._send_packet(new DataPacket(DataPacket.PING));
       // If the last ping was more than 5 seconds ago, connection was lost.
       if (Date.now() - this._lastPing > 5000) {
         console.log('Did not receive ping from host in 5+ seconds');
@@ -149,7 +158,7 @@ export default class Client {
     this._connection.on('data', this._on_connection_data.bind(this));
     // Send a USERNAME packet to request a username.
     // This is only performed when the connection is first established.
-    this.send(new DataPacket(DataPacket.USERNAME, this.username));
+    this._send_packet(new DataPacket(DataPacket.USERNAME, this.username));
   }
 
   _on_connection_close() {
