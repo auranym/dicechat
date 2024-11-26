@@ -167,7 +167,9 @@ export class Home extends HTMLElement {
       username,
       onOpen: roomCode => alert?.showAlert?.('Created room with code ' + roomCode),
       onFailure: reason => alert?.showAlert?.(reason),
-      onMessage: (username, message) => console.log(`${username}: ${message}`)
+      onMessage: (username, message) => console.log(`${username}: ${message}`),
+      onJoin: username => console.log(`${username} joined!`),
+      onLeave: username => console.log(`${username} left.`)
     }));
   }
 }

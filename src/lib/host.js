@@ -11,6 +11,8 @@ export default class Host {
   _onOpen;
   _onFailure;
   _onMessage;
+  _onJoin;
+  _onLeave;
   _roomCode;
   _roomCodeTries;
   _peer;
@@ -37,8 +39,12 @@ export default class Host {
    * Callback when the host errors or cannot be set up. Passes a single parameter with the reason for error.
    * @param {function} configs.onMessage
    * Callback when a message is received from the host. Passes a two string parameters: username and message.
+   * @param {function} configs.onJoin
+   * Callback when a client joins the room. Passes the username of the client as the parameter.
+   * @param {function} configs.onLeave
+   * Callback when a client leaves the room. Passes the username of the client as the parameter.
   */
-  constructor({ username, onOpen, onFailure, onMessage }) {
+  constructor({ username, onOpen, onFailure, onMessage, onJoin, onLeave }) {
     // This *should* have been done already, but just in case,
     // sanitize the username again and check that it is
     // a non-empty string.
@@ -54,6 +60,8 @@ export default class Host {
     this._onOpen = onOpen;
     this._onFailure = onFailure;
     this._onMessage = onMessage;
+    this._onJoin = onJoin;
+    this._onLeave = onLeave;
     this._roomCodeTries = 0;
     this._clients = {};
 
@@ -86,6 +94,19 @@ export default class Host {
     if (typeof this._onFailure === 'function') {
       this._onFailure('Room was closed.');
     }
+  }
+
+  /**
+   * @returns {string[]} Usernames of currently connected clients.
+   */
+  getUsernames() {
+    return Object.values(this._clients).reduce((usernames, client) => {
+      const username = client.username;
+      if (typeof username === 'string')
+        return [...usernames, username];
+      else
+        return [...usernames];
+    }, []);
   }
 
   _setup() {
@@ -139,7 +160,9 @@ export default class Host {
     }
     // console.log('HOST: sending to group:', JSON.stringify(dataPacket, null, 1));
     for (const client of Object.values(this._clients)) {
-      client.connection.send(dataPacket);
+      if (client.connection.open) {
+        client.connection.send(dataPacket);
+      }
     }
   }
 
@@ -230,6 +253,12 @@ export default class Host {
 
   _on_connection_close(peerId) {
     console.log('HOST: Connection closed for client', peerId);
+    if (
+      typeof this._onLeave === 'function'
+      && typeof this._clients[peerId].username === 'string'
+    ) {
+      this._onLeave(this._clients[peerId].username);
+    }
     delete this._clients[peerId];
   }
 
@@ -255,6 +284,11 @@ export default class Host {
         this._clients[id].connection.send(
           new DataPacket(DataPacket.USERNAME, this._clients[id].username)
         );
+        // If we reach here, then the client is successfully connected and ready
+        // to send and receive messages.
+        if (typeof this._onJoin === 'function') {
+          this._onJoin(this._clients[id].username);
+        }
         break;
       }
       case DataPacket.MESSAGE: {
