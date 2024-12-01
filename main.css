@@ -129,11 +129,6 @@ dc-icon {
   height: 1em;
 }
 
-dc-chat {
-  height: 50vh;
-  width: min(200px, 80vh);
-}
-
 dc-chat ul {
   padding: 0;
   margin: 0;
@@ -153,6 +148,10 @@ dc-chat p {
 dc-alert {
   position: sticky;
   top: var(--space-sm);
+}
+
+.chat-height {
+  height: calc(100vh - (var(--font-xxl) + 2 * var(--space-md) + 2 * var(--space-lg)));
 }
 
 .text-blue {
