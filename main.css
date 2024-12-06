@@ -1,3 +1,9 @@
+/*
+--------------------
+       ATOMS
+--------------------
+*/
+
 :root {
   /* Variables */
   --color-black: #272727;
@@ -29,13 +35,19 @@
   font-size: 18px;
 }
 
+/*
+--------------------
+      ELEMENTS
+--------------------
+*/
+
+
 ::selection {
   background-color: var(--color-light-blue);
 }
 
 body {
   margin: 0;
-  padding-bottom: var(--space-lg);
 }
 
 main,
@@ -43,29 +55,35 @@ dc-alert {
   width: min(400px, calc(100vw - 2 * var(--space-md)));
 }
 
-h1, h2, h3, h4, h5, h6, b {
+h1, h2, h3, h4, h5, h6, b,
+.h1, .h2, .h3, .h4, .h5, .h6 {
   font-weight: var(--font-weight-bold);
 }
 
-h2, h3 {
+h2, h3,
+.h2, .h3 {
   margin: var(--space-sm) 0;
 }
 
-h4, h5, h6 {
+h4, h5, h6,
+.h4, .h5, .h6 {
   font-size: var(--font-md);
   margin: var(--space-sm) 0;
 }
 
-h1 {
+h1,
+.h1 {
   font-size: var(--font-xxl);
   margin: var(--space-md) 0;
 }
 
-h2 {
+h2,
+.h2 {
   font-size: var(--font-xl);
 }
 
-h3 {
+h3,
+.h3 {
   font-size: var(--font-lg);
 }
 
@@ -116,17 +134,19 @@ input:disabled::placeholder {
   color: var(--color-gray);
 }
 
-header h1 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-width: fit-content;
-}
+/*
+--------------------
+     COMPONENTS
+--------------------
+*/
 
 dc-icon {
   width: 1em;
   height: 1em;
+}
+
+dc-home {
+  padding-bottom: var(--space-lg);
 }
 
 dc-chat ul {
@@ -150,9 +170,19 @@ dc-alert {
   top: var(--space-sm);
 }
 
-.chat-height {
-  height: calc(100vh - (var(--font-xxl) + 2 * var(--space-md) + 2 * var(--space-lg)));
+dc-room h1 {
+  margin-bottom: 0;
 }
+
+dc-room div:has(> dc-chat) {
+  height: calc(100vh - (var(--font-xxl) + 2 * var(--space-md)));
+}
+
+/*
+--------------------
+      UTILITY
+--------------------
+*/
 
 .text-blue {
   color: var(--color-blue);

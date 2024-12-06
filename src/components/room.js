@@ -9,8 +9,8 @@ export class Room extends HTMLElement {
   render() {
     this.innerHTML = /* html */`
     <main class="vflex align-center gap-xs">
-      <h1 class="text-centered">${this.host}'s room</h1>
-      <div class="panel full-width chat-height">
+      <h1 class="text-centered h3">${this.host}'s room</h1>
+      <div class="panel full-width">
         <dc-chat class="full-width"></dc-chat>
       </div>
     </main>
