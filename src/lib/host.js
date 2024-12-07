@@ -4,15 +4,13 @@ import { generateRoomCode, getRoomCodePeerId, validateRoomCode } from './room-co
 import DataPacket from './data-packet';
 
 export default class Host {
-  // Public properties
-  username;
-
   // Private properties
   _onOpen;
   _onFailure;
   _onMessage;
   _onJoin;
   _onLeave;
+  _username;
   _roomCode;
   _roomCodeTries;
   _peer;
@@ -48,8 +46,8 @@ export default class Host {
     // This *should* have been done already, but just in case,
     // sanitize the username again and check that it is
     // a non-empty string.
-    this.username = DOMPurify.sanitize(username ?? '');
-    if (this.username === '') {
+    this._username = DOMPurify.sanitize(username ?? '');
+    if (this._username === '') {
       if (typeof onFailure === 'function') {
         onFailure('Host username is invalid.');
       }
@@ -97,6 +95,20 @@ export default class Host {
   }
 
   /**
+   * @returns {string} The room code for this host room.
+   */
+  getRoomCode() {
+    return this._roomCode;
+  }
+
+  /**
+   * @returns {string} The username of this host.
+   */
+  getUsername() {
+    return this._username;
+  }
+
+  /**
    * @returns {string[]} Usernames of currently connected clients.
    */
   getUsernames() {
@@ -128,7 +140,7 @@ export default class Host {
    */
   _get_new_safe_username(username) {
     const usernames = {
-      [this.username]: true
+      [this._username]: true
     };
     for (const client of Object.values(this._clients)) {
       if (client.username) {

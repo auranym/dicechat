@@ -4,13 +4,11 @@ import { getRoomCodePeerId, validateRoomCode } from './room-code';
 import DataPacket from './data-packet';
 
 export default class Client {
-  // Public properties
-  username;
-
   // Private properties
   _onConnected;
   _onFailure;
   _onMessage;
+  _username;
   _roomCode;
   _peer;
   _connection;
@@ -37,8 +35,8 @@ export default class Client {
     // This *should* have been done already, but just in case,
     // sanitize the username again and check that it is
     // a non-empty string.
-    this.username = DOMPurify.sanitize(username ?? '');
-    if (this.username === '') {
+    this._username = DOMPurify.sanitize(username ?? '');
+    if (this._username === '') {
       if (typeof onFailure === 'function') {
         onFailure('Client username is invalid.');
       }
@@ -90,6 +88,21 @@ export default class Client {
       clearInterval(this._pingInterval);
     }
   }
+
+  /**
+   * @returns {string} The code of the room current connected to.
+   */
+  getRoomCode() {
+    return this._roomCode;
+  }
+
+  /**
+   * @returns {string} The username of this client.
+   */
+  getUsername() {
+    return this._username;
+  }
+
   /**
    * Sends a data packet to the host.
    * @param {DataPacket} dataPacket DataPacket being sent.
@@ -158,7 +171,7 @@ export default class Client {
     this._connection.on('data', this._on_connection_data.bind(this));
     // Send a USERNAME packet to request a username.
     // This is only performed when the connection is first established.
-    this._send_packet(new DataPacket(DataPacket.USERNAME, this.username));
+    this._send_packet(new DataPacket(DataPacket.USERNAME, this._username));
   }
 
   _on_connection_close() {
@@ -190,7 +203,7 @@ export default class Client {
       // ASSUMPTION:
       // This is only ever reached once.
       case DataPacket.USERNAME: {
-        this.username = dataPacket.content;
+        this._username = dataPacket.content;
         this._on_successfully_joined();
         break;
       }
