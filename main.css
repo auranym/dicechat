@@ -33,6 +33,7 @@
   font-family: var(--font);
   font-weight: var(--font-weight);
   font-size: 18px;
+  word-break: break-all;
 }
 
 /*
@@ -149,6 +150,10 @@ dc-home {
   padding-bottom: var(--space-lg);
 }
 
+dc-chat {
+  display: block;
+}
+
 dc-chat ul {
   padding: 0;
   margin: 0;
@@ -156,6 +161,7 @@ dc-chat ul {
   height: 100%;
   list-style: none;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: var(--color-light-gray) transparent;
@@ -171,11 +177,17 @@ dc-alert {
 }
 
 dc-room h1 {
-  margin-bottom: 0;
+  margin-bottom: 0 !important;
 }
 
 dc-room div:has(> dc-chat) {
+  padding: var(--space-sm) !important;
   height: calc(100vh - (var(--font-xxl) + 2 * var(--space-md)));
+}
+
+dc-room input, button {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /*
@@ -240,6 +252,7 @@ dc-room div:has(> dc-chat) {
 .flex {
   flex: 1 1 0%;
   min-width: 0;
+  min-height: 0;
 }
 
 .align-center {
@@ -279,4 +292,12 @@ dc-room div:has(> dc-chat) {
 
 .border-black {
   border-color: var(--color-black);
+}
+
+.icon-button {
+  padding: var(--space-xs);
+}
+
+.icon-button > dc-icon {
+  display: block;
 }

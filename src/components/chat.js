@@ -23,7 +23,7 @@ export class Chat extends HTMLElement {
 
     // Render HTML
     this.innerHTML = /* html */`
-    <ul class="vflex gap-xs">
+    <ul class="vflex gap-xxs">
       ${this.messages.map(message => /* html */`<li><p>${message}</p></li>`).join('')}
     </ul>
     `;
