@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import Message from '../lib/message';
 
 export class Room extends HTMLElement {
   static observedAttributes = ['host', 'code'];
@@ -51,7 +52,10 @@ export class Room extends HTMLElement {
 
     if (messageInput.value) {
       this.querySelector('dc-chat').addMessage(
-        DOMPurify.sanitize(messageInput.value)
+        new Message(DOMPurify.sanitize(messageInput.value), {
+          username: 'foo'
+          // renderAsBlock: true
+        }),
       );
       messageInput.value = '';
     }

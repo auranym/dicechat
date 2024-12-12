@@ -167,8 +167,13 @@ dc-chat ul {
   scrollbar-color: var(--color-light-gray) transparent;
 }
 
-dc-chat p {
-  margin: 0;
+dc-chat li.line {
+  font-style: italic;
+}
+
+dc-chat li.block {
+  padding: var(--space-xs) var(--space-sm);
+  text-align: center;
 }
 
 dc-alert {

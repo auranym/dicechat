@@ -1,6 +1,10 @@
+import Message from '../lib/message';
 const MAX_MESSAGES = 300; // This was chosen arbitrarily...
 
 export class Chat extends HTMLElement {
+  /**
+   * @type {Message[]}
+   */
   messages;
 
   constructor() {
@@ -9,6 +13,9 @@ export class Chat extends HTMLElement {
     this.render();
   }
 
+  /**
+   * @param {Message} message 
+   */
   addMessage(message) {
     this.messages.push(message);
     if (this.messages.length >= MAX_MESSAGES) {
@@ -29,7 +36,10 @@ export class Chat extends HTMLElement {
     // Render HTML
     this.innerHTML = /* html */`
     <ul class="vflex gap-xxs">
-      ${this.messages.map(message => /* html */`<li><p>${message}</p></li>`).join('')}
+      ${this.messages.map(message => {
+        if (message.username) return /* html */`<li><b>${message.username}:</b> ${message.content}</li>`;
+        else return /* html */`<li class="${message.renderAsBlock ? 'block' : 'line'}">${message.content}</li>`
+      }).join('')}
     </ul>
     `;
 
