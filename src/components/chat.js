@@ -1,3 +1,5 @@
+const MAX_MESSAGES = 300; // This was chosen arbitrarily...
+
 export class Chat extends HTMLElement {
   messages;
 
@@ -9,6 +11,9 @@ export class Chat extends HTMLElement {
 
   addMessage(message) {
     this.messages.push(message);
+    if (this.messages.length >= MAX_MESSAGES) {
+      this.messages = this.messages.slice(1);
+    }
     this.render();
   }
 
