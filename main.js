@@ -154,9 +154,53 @@ function onHostLeave(host, username) {
  * @param {string} message The text content being sent.
  */
 function onHostRoomSend(host, message) {
+  const username = host.getUsername();
   const messageObj = new Message(message, { username: host.getUsername() });
-  host.send(messageObj.toString());
-  getRoom().addMessage(messageObj);
+  // First check if the message is a command.
+  const commandName = Command.getCommand(messageObj.content);
+  // If so, then try to do the command.
+  if (commandName != null) {
+
+    // First check that is actually *is* a command.
+    const command = commands[commandName];
+    if (!(command instanceof Command)) {
+      // If not, send invalid command message to the sender.
+      getRoom().addMessage(new Message('Invalid command. Type /help for a list of commands.'));
+      return;
+    }
+
+    // If we reach here, the command exists.
+    // So now validate that it is being used correctly
+    const commandArg = Command.getArg(messageObj.content);
+    if (
+      typeof command.validator === 'function'
+      && !command.validator(commandArg, username, host)
+    ) {
+      // If used incorrectly, say so.
+      getRoom().addMessage(new Message(command.invalidMessage));
+      return;
+    }
+
+    // Finally, if we reach here, the command is valid.
+    const commandTargets = typeof command.targeter === 'function'
+      ? command.targeter(commandArg, username, host)
+      : undefined;
+    const commandMessage = command.applier(commandArg, username, host);
+    // Send if command targets are not only the host
+    if (!commandTargets || !(commandTargets.length === 1 && commandTargets[0] === username)) {
+      host.send(commandMessage.toString(), commandTargets);
+    }
+    // Also show in the host's chat if applicable.
+    if (!commandTargets || commandTargets.includes(host.getUsername())) {
+      getRoom().addMessage(commandMessage);
+    }
+  }
+  
+  // If *not* a command, perform like a regular message.
+  else {
+    host.send(messageObj.toString());
+    getRoom().addMessage(messageObj);
+  }
 }
 
 function getHome() {
