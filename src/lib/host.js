@@ -78,9 +78,24 @@ export default class Host {
   /**
    * Sends a message to all clients in the room.
    * @param {string} message 
+   * @param {string[]} usernames (Optional) Who to send the message to.
    */
-  send(message) {
-    this._send_packet(new DataPacket(DataPacket.MESSAGE, message));
+  send(message, usernames = undefined) {
+    // Usually, messages will be sent to all users.
+    if (usernames === undefined) {  
+      this._send_packet(new DataPacket(DataPacket.MESSAGE, message));
+    }
+    // If there are specific users, find their objects in _clients.
+    else {
+      // DEV NOTE:
+      // This can definitely be optimized, since it's O(n).
+      // Some solution maybe could be to keep a map of username->client.
+      // But for now, I won't be doing that.
+      this._send_packet(
+        new DataPacket(DataPacket.MESSAGE, message), 
+        Object.values(this._clients).filter(client => usernames.includes(client.username))
+      );
+    }
   }
 
   /**
@@ -168,13 +183,13 @@ export default class Host {
    * This function sanitizes content and also performs any
    * commands associated with the message.
    * @param {DataPacket} dataPacket Message being sent.
+   * @param {object[]} clients (Optional) Which clients to send the message to. If omitted, all clients will be used.
    */
-  _send_packet(dataPacket) {
+  _send_packet(dataPacket, clients = undefined) {
     if (dataPacket.content) { 
-      dataPacket.content = DOMPurify.sanitize(dataPacket.content);
+      dataPacket.content = dataPacket.content;
     }
-    // console.log('HOST: sending to group:', JSON.stringify(dataPacket, null, 1));
-    for (const client of Object.values(this._clients)) {
+    for (const client of (clients ?? Object.values(this._clients))) {
       if (client.connection.open) {
         client.connection.send(dataPacket);
       }
@@ -205,7 +220,6 @@ export default class Host {
 
   _on_peer_connection(connection) {
     const peerId = connection.peer;
-    console.log('HOST: Connected to client', peerId);
     this._clients[peerId] = { connection };
     connection.on('open', this._on_connection_open.bind(this, peerId));
     connection.on('close', this._on_connection_close.bind(this, peerId));
@@ -261,13 +275,11 @@ export default class Host {
   }
 
   _on_connection_open(peerId) {
-    console.log('HOST: Connection ready to use for client', peerId);
     this._clients[peerId].lastPing = Date.now();
     this._clients[peerId].connection.on('data', this._on_connection_data.bind(this, peerId));
   }
 
   _on_connection_close(peerId) {
-    console.log('HOST: Connection closed for client', peerId);
     if (
       typeof this.onLeave === 'function'
       && typeof this._clients[peerId].username === 'string'
@@ -282,7 +294,6 @@ export default class Host {
   }
   
   _on_connection_data(id, data) {
-    // console.log('HOST: received from', id, ':', JSON.stringify(data, null, 1));
     // Handle different types of data packets.
     const dataPacket = DataPacket.parse(data);
     switch (dataPacket.type) {

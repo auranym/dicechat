@@ -4,6 +4,7 @@ import { validateRoomCode, generateRoomCode, getRoomCodePeerId } from './room-co
 import DataPacket from './data-packet';
 import Message from './message';
 import { showAlert, hideAlert } from './show-hide-alert';
+import Command from './command';
 
 export {
   Client,
@@ -14,5 +15,6 @@ export {
   DataPacket,
   Message,
   showAlert,
-  hideAlert
+  hideAlert,
+  Command,
 };

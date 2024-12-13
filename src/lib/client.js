@@ -120,7 +120,7 @@ export default class Client {
    */
   _send_packet(dataPacket) {
     if (dataPacket.content) { 
-      dataPacket.content = DOMPurify.sanitize(dataPacket.content);
+      dataPacket.content = dataPacket.content;
     }
     this._connection.send(dataPacket);
   }

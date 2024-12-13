@@ -76,6 +76,7 @@ export class Home extends HTMLElement {
     `;
 
     // Hydrate
+    this.querySelector('#username').oninput = this._onUsernameInput.bind(this);
     this.querySelector('#room-code').oninput = this._onRoomCodeInput.bind(this);
     this.querySelector('#join').onclick = this._onJoin.bind(this);
     this.querySelector('#host').onclick = this._onHost.bind(this);
@@ -122,7 +123,11 @@ export class Home extends HTMLElement {
   }
 
   _getUsername() {
-    return DOMPurify.sanitize(this.querySelector('#username').value);
+    return DOMPurify.sanitize(this.querySelector('#username').value.replace(/ /g, ''));
+  }
+
+  _onUsernameInput(val) {
+    val.target.value = val.target.value.replace(/ /g, '');
   }
 
   _onRoomCodeInput(val) {

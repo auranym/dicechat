@@ -1,6 +1,7 @@
 import './main.css';
 import '@fontsource-variable/quicksand';
-import { Client, Host, Message, showAlert, hideAlert } from './src/lib';
+import { Client, Host, Message, Command, showAlert, hideAlert } from './src/lib';
+import commands from './src/commands';
 
 /**
  * Called when Home component connects to a room or sets up a room.
@@ -79,8 +80,50 @@ function onClientRoomSend(client, message) {
  * @param {string} message Contents of the message.
  */
 function onHostMessage(host, username, message) {
-  host.send(message);
-  getRoom().addMessage(Message.parse(message));
+  const messageObj = Message.parse(message);
+  // First check if the message is a command.
+  const commandName = Command.getCommand(messageObj.content);
+  
+  // If so, then try to do the command.
+  if (commandName != null) {
+
+    // First check that is actually *is* a command.
+    const command = commands[commandName];
+    if (!(command instanceof Command)) {
+      // If not, send invalid command message to the sender.
+      host.send(new Message('Invalid command. Type /help for a list of commands.').toString(), [username]);
+      return;
+    }
+
+    // If we reach here, the command exists.
+    // So now validate that it is being used correctly
+    const commandArg = Command.getArg(messageObj.content);
+    if (
+      typeof command.validator === 'function'
+      && !command.validator(commandArg, username, host)
+    ) {
+      // If used incorrectly, say so.
+      host.send(new Message(command.invalidMessage).toString(), [username]);
+      return;
+    }
+
+    // Finally, if we reach here, the command is valid.
+    const commandTargets = typeof command.targeter === 'function'
+      ? command.targeter(commandArg, username, host)
+      : undefined;
+    const commandMessage = command.applier(commandArg, username, host);
+    host.send(commandMessage.toString(), commandTargets);
+    // Also show in the host's chat if applicable.
+    if (!commandTargets || commandTargets.includes(host.getUsername())) {
+      getRoom().addMessage(commandMessage);
+    }
+  }
+
+  // If *not* a command, perform like a regular message.
+  else {
+    host.send(message);
+    getRoom().addMessage(messageObj);
+  }
 }
 
 /**
