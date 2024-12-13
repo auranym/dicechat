@@ -33,7 +33,7 @@ function onHomeReady(obj) {
     hideAlert();
 
     const room = showRoom();
-    room.setAttribute('host', 'TODO');
+    room.setAttribute('host', obj.getHostUsername());
     room.setAttribute('code', obj.getRoomCode());
     room.onSend = message => onClientRoomSend(obj, message);
   }

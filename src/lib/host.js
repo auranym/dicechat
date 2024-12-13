@@ -293,12 +293,15 @@ export default class Host {
       // This case occurs when a client successfully connects to a room
       // and they request a username. The current usernames are compared,
       // and if there are any collisions, a number is appended
-      // to the requested username, which is sent back to the client.
+      // to the requested username, which is sent back to the client
+      // along with the host's username.
       case DataPacket.USERNAME: {
         this._clients[id].username = this._get_new_safe_username(dataPacket.content);
         this._clients[id].connection.send(
-          new DataPacket(DataPacket.USERNAME, this._clients[id].username)
-        );
+          new DataPacket(DataPacket.USERNAME, JSON.stringify({
+            c: this._clients[id].username,
+            h: this._username
+        })));
         // If we reach here, then the client is successfully connected and ready
         // to send and receive messages.
         if (typeof this.onJoin === 'function') {

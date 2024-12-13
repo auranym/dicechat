@@ -12,6 +12,7 @@ export default class Client {
 
   // Private properties
   _username;
+  _hostUsername;
   _roomCode;
   _peer;
   _connection;
@@ -104,6 +105,13 @@ export default class Client {
    */
   getUsername() {
     return this._username;
+  }
+
+  /**
+   * @returns {string} The username of the host.
+   */
+  getHostUsername() {
+    return this._hostUsername;
   }
 
   /**
@@ -206,7 +214,11 @@ export default class Client {
       // ASSUMPTION:
       // This is only ever reached once.
       case DataPacket.USERNAME: {
-        this._username = dataPacket.content;
+        // Data packet contains asigned username
+        // and the host's username.
+        const usernames = JSON.parse(dataPacket.content);
+        this._username = usernames.c;
+        this._hostUsername = usernames.h;
         this._on_successfully_joined();
         break;
       }
