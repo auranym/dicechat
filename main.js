@@ -1,7 +1,6 @@
 import './main.css';
 import '@fontsource-variable/quicksand';
 import { Client, Host, Message, showAlert, hideAlert } from './src/lib';
-// import { RoomHost, RoomClient } from './src/lib';
 
 /**
  * Called when Home component connects to a room or sets up a room.
@@ -10,8 +9,9 @@ import { Client, Host, Message, showAlert, hideAlert } from './src/lib';
  * @param {*} obj Client or Host instance, depending on user interaction.
  */
 function onHomeReady(obj) {
-  if (obj instanceof Host) {
 
+  // Set callbacks and create room for a Host.
+  if (obj instanceof Host) {
     obj.onFailure = onFailure;
     obj.onMessage = (username, message) => onHostMessage(obj, username, message);
     obj.onJoin = username => onHostJoin(obj, username);
@@ -24,11 +24,20 @@ function onHomeReady(obj) {
     room.setAttribute('code', obj.getRoomCode());
     room.onSend = message => onHostRoomSend(obj, message);
   }
+
+  // Set callbacks and create room for a Client.
   else if (obj instanceof Client) {
     obj.onFailure = onFailure;
-    showRoom();
+    obj.onMessage = message => onClientMessage(obj, message);
+
     hideAlert();
+
+    const room = showRoom();
+    room.setAttribute('host', 'TODO');
+    room.setAttribute('code', obj.getRoomCode());
+    room.onSend = message => onClientRoomSend(obj, message);
   }
+
   else {
     showAlert('Cannot tell if hosting or joining. Fatal error, unknown cause.', { color: 'red' });
   }
@@ -41,7 +50,6 @@ function onHomeReady(obj) {
  * @param {string} cause Error message to show to the user.
  */
 function onFailure(cause) {
-  document.removeChild(document.querySelector('dc-room'));
   showHome();
   showAlert(cause);
 }
@@ -52,7 +60,7 @@ function onFailure(cause) {
  * @param {string} message Contents of the message.
  */
 function onClientMessage(client, message) {
-
+  getRoom().addMessage(Message.parse(message));
 }
 
 /**
@@ -61,7 +69,7 @@ function onClientMessage(client, message) {
  * @param {string} message The text content being sent.
  */
 function onClientRoomSend(client, message) {
-
+  client.send(new Message(message, { username: client.getUsername() }).toString());
 }
 
 /**
@@ -71,7 +79,8 @@ function onClientRoomSend(client, message) {
  * @param {string} message Contents of the message.
  */
 function onHostMessage(host, username, message) {
-
+  host.send(message);
+  getRoom().addMessage(Message.parse(message));
 }
 
 /**
@@ -80,7 +89,9 @@ function onHostMessage(host, username, message) {
  * @param {string} username Username of client that just joined.
  */
 function onHostJoin(host, username) {
-
+  const messageObj = new Message(`${username} has joined!`);
+  host.send(messageObj.toString());
+  getRoom().addMessage(messageObj);
 }
 
 /**
@@ -89,7 +100,9 @@ function onHostJoin(host, username) {
  * @param {string} username Username of client that just left. 
  */
 function onHostLeave(host, username) {
-
+  const messageObj = new Message(`${username} has left.`);
+  host.send(messageObj.toString());
+  getRoom().addMessage(messageObj);
 }
 
 /**
@@ -98,7 +111,9 @@ function onHostLeave(host, username) {
  * @param {string} message The text content being sent.
  */
 function onHostRoomSend(host, message) {
-  getRoom().addMessage(new Message(message, { username: host.getUsername() }));
+  const messageObj = new Message(message, { username: host.getUsername() });
+  host.send(messageObj.toString());
+  getRoom().addMessage(messageObj);
 }
 
 function getHome() {
