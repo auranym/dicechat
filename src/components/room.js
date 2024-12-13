@@ -1,11 +1,27 @@
 import DOMPurify from 'dompurify';
-import Message from '../lib/message';
+import { Message } from '../lib';
 
 export class Room extends HTMLElement {
   static observedAttributes = ['host', 'code'];
 
+  /**
+   * Callback when the "send" button is clicked and a message
+   * should be sent to the room. The input box is emptied
+   * when the send button is clicked. The message string
+   * is passed as the parameter to this callback.
+   * 
+   * Note: Hitting the send button does *not* update the view.
+   * This should be done via the "addMessage" method with
+   * the controller.
+   * @type {function}
+   */
+  onSend;
+
   constructor() {
     super();
+  }
+
+  connectedCallback() {
     this.render();
   }
 
@@ -46,17 +62,21 @@ export class Room extends HTMLElement {
     this.render();
   }
 
+  /**
+   * Adds the message object to the chat component
+   * (via the similarly named addMessage method).
+   * @param {Message} message 
+   */
+  addMessage(message) {
+    this.querySelector('dc-chat').addMessage(message);
+  }
+
   _onSend() {
     // No need to do any safety checks... I think.
     const messageInput = this.querySelector('#message');
 
     if (messageInput.value) {
-      this.querySelector('dc-chat').addMessage(
-        new Message(DOMPurify.sanitize(messageInput.value), {
-          username: 'foo'
-          // renderAsBlock: true
-        }),
-      );
+      this.onSend?.(DOMPurify.sanitize(messageInput.value));
       messageInput.value = '';
     }
 

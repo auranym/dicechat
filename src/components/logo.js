@@ -1,6 +1,9 @@
 export class Logo extends HTMLElement {
   constructor() {
     super();
+  }
+
+  connectedCallback() {
     this.render();
   }
 

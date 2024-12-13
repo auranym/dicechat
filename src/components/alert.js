@@ -1,6 +1,9 @@
 export class Alert extends HTMLElement {
   constructor() {
     super();
+  }
+
+  connectedCallback() {
     this.render();
   }
 
@@ -47,6 +50,7 @@ export class Alert extends HTMLElement {
   }
 
   hideAlert() {
+    const dialog = this.querySelector('dialog');
     if (dialog.open) {
       dialog.close();
     }

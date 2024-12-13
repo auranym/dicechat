@@ -33,7 +33,6 @@
   font-family: var(--font);
   font-weight: var(--font-weight);
   font-size: 18px;
-  word-break: break-all;
 }
 
 /*
@@ -167,6 +166,10 @@ dc-chat ul {
   scrollbar-color: var(--color-light-gray) transparent;
 }
 
+dc-chat li {
+  word-break: break-all;
+}
+
 dc-chat li.line {
   font-style: italic;
 }
@@ -190,7 +193,8 @@ dc-room div:has(> dc-chat) {
   height: calc(100vh - (var(--font-xxl) + 2 * var(--space-md)));
 }
 
-dc-room input, button {
+dc-room input,
+dc-room button {
   padding-top: 0;
   padding-bottom: 0;
 }

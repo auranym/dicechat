@@ -1,9 +1,20 @@
 import DOMPurify from 'dompurify';
-import { validateRoomCode, Client, Host } from '../lib';
+import { validateRoomCode, Client, Host, showAlert, hideAlert } from '../lib';
 
 export class Home extends HTMLElement {
+  /**
+   * Callback when a room is created or joined.
+   * The single parameter is a Host or Client object,
+   * depending on what the user does.
+   * @type {function}
+   */
+  onReady;
+  
   constructor() {
     super();
+  }
+
+  connectedCallback() {
     this.render();
   }
 
@@ -139,15 +150,18 @@ export class Home extends HTMLElement {
     // Attempt to connect.
     this._setDisabled(true);
     this._setJoinStatus({ isHidden: true });
-    const alert = document.querySelector('dc-alert');
-    alert?.showAlert?.('Connecting...', { isClosable: false });
-    console.log(new Client({
+    showAlert('Connecting...', { isClosable: false });
+    const client = new Client({
       username,
       roomCode,
-      onConnected: () => alert?.showAlert?.('Connected to room!'),
-      onFailure: reason => alert?.showAlert?.(reason),
-      onMessage: message => console.log(message)
-    }));
+      // onConnected: () => showAlert('Connected to room!'),
+      onConnected: () => this.onReady?.(client),
+      onFailure: reason => {
+        showAlert(reason);
+        this._setDisabled(false);
+      },
+      // onMessage: message => console.log(message)
+    });
   }
 
   _onHost() {
@@ -161,16 +175,19 @@ export class Home extends HTMLElement {
     // Attempt to connect
     this._setDisabled(true);
     this._setHostStatus({ isHidden: true });
-    const alert = document.querySelector('dc-alert');
-    alert?.showAlert?.('Connecting...', { isClosable: false });
-    console.log(new Host({
+    showAlert('Connecting...', { isClosable: false });
+    const host = new Host({
       username,
-      onOpen: roomCode => alert?.showAlert?.('Created room with code ' + roomCode),
-      onFailure: reason => alert?.showAlert?.(reason),
-      onMessage: (username, message) => console.log(`${username}: ${message}`),
-      onJoin: username => console.log(`${username} joined!`),
-      onLeave: username => console.log(`${username} left.`)
-    }));
+      // onOpen: roomCode => showAlert('Created room with code ' + roomCode),
+      onOpen: () => this.onReady?.(host),
+      onFailure: reason => {
+        showAlert(reason);
+        this._setDisabled(false);
+      },
+      // onMessage: (username, message) => console.log(`${username}: ${message}`),
+      // onJoin: username => console.log(`${username} joined!`),
+      // onLeave: username => console.log(`${username} left.`)
+    });
   }
 }
 

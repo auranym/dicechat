@@ -4,12 +4,15 @@ import { generateRoomCode, getRoomCodePeerId, validateRoomCode } from './room-co
 import DataPacket from './data-packet';
 
 export default class Host {
+  // Public properties
+  // (callbacks)
+  onOpen;
+  onFailure;
+  onMessage;
+  onJoin;
+  onLeave;
+
   // Private properties
-  _onOpen;
-  _onFailure;
-  _onMessage;
-  _onJoin;
-  _onLeave;
   _username;
   _roomCode;
   _roomCodeTries;
@@ -55,11 +58,11 @@ export default class Host {
     }
 
     // Assign properties
-    this._onOpen = onOpen;
-    this._onFailure = onFailure;
-    this._onMessage = onMessage;
-    this._onJoin = onJoin;
-    this._onLeave = onLeave;
+    this.onOpen = onOpen;
+    this.onFailure = onFailure;
+    this.onMessage = onMessage;
+    this.onJoin = onJoin;
+    this.onLeave = onLeave;
     this._roomCodeTries = 0;
     this._clients = {};
 
@@ -89,8 +92,8 @@ export default class Host {
     }
     this._peer.destroy();
     clearInterval(this._pingInterval);
-    if (typeof this._onFailure === 'function') {
-      this._onFailure('Room was closed.');
+    if (typeof this.onFailure === 'function') {
+      this.onFailure('Room was closed.');
     }
   }
 
@@ -181,8 +184,8 @@ export default class Host {
   _on_peer_open() {
     // If we reach here, then the room code was valid!
     this._peer.on('connection', this._on_peer_connection.bind(this));
-    if (typeof this._onOpen === 'function') {
-      this._onOpen(this._roomCode);
+    if (typeof this.onOpen === 'function') {
+      this.onOpen(this._roomCode);
     }
     
     // Ping clients every now and then
@@ -247,8 +250,8 @@ export default class Host {
 
     // Quit here if the error message is fatal
     if (fatalErrorMessage) {
-      if (typeof this._onFailure === 'function') {
-        this._onFailure(fatalErrorMessage);
+      if (typeof this.onFailure === 'function') {
+        this.onFailure(fatalErrorMessage);
       }
     }
     // Try setting up again if unavailableId was not fatal.
@@ -266,10 +269,10 @@ export default class Host {
   _on_connection_close(peerId) {
     console.log('HOST: Connection closed for client', peerId);
     if (
-      typeof this._onLeave === 'function'
+      typeof this.onLeave === 'function'
       && typeof this._clients[peerId].username === 'string'
     ) {
-      this._onLeave(this._clients[peerId].username);
+      this.onLeave(this._clients[peerId].username);
     }
     delete this._clients[peerId];
   }
@@ -298,14 +301,14 @@ export default class Host {
         );
         // If we reach here, then the client is successfully connected and ready
         // to send and receive messages.
-        if (typeof this._onJoin === 'function') {
-          this._onJoin(this._clients[id].username);
+        if (typeof this.onJoin === 'function') {
+          this.onJoin(this._clients[id].username);
         }
         break;
       }
       case DataPacket.MESSAGE: {
-        if (typeof this._onMessage === 'function') {
-          this._onMessage(this._clients[id].username, dataPacket.content);
+        if (typeof this.onMessage === 'function') {
+          this.onMessage(this._clients[id].username, dataPacket.content);
         }
         break;
       }

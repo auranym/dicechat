@@ -4,10 +4,13 @@ import { getRoomCodePeerId, validateRoomCode } from './room-code';
 import DataPacket from './data-packet';
 
 export default class Client {
+  // Public properties
+  // (callbacks)
+  onConnected;
+  onFailure;
+  onMessage;
+
   // Private properties
-  _onConnected;
-  _onFailure;
-  _onMessage;
   _username;
   _roomCode;
   _peer;
@@ -52,9 +55,9 @@ export default class Client {
     }
 
     // Assign properties
-    this._onConnected = onConnected;
-    this._onFailure = onFailure;
-    this._onMessage = onMessage;
+    this.onConnected = onConnected;
+    this.onFailure = onFailure;
+    this.onMessage = onMessage;
     this._roomCode = roomCode;
     // Create the peer!
     this._peer = new Peer();
@@ -128,8 +131,8 @@ export default class Client {
       }
     }, 2000);
 
-    if (typeof this._onConnected === 'function') {
-      this._onConnected();
+    if (typeof this.onConnected === 'function') {
+      this.onConnected();
     }
   }
 
@@ -142,8 +145,8 @@ export default class Client {
   _on_peer_error(err) {
     const closeAndError = msg => {
       this.leave();
-      if (typeof this._onFailure === 'function') {
-        this._onFailure(msg);
+      if (typeof this.onFailure === 'function') {
+        this.onFailure(msg);
       }
     }
 
@@ -177,8 +180,8 @@ export default class Client {
   _on_connection_close() {
     this._peer.destroy();
     clearInterval(this._pingInterval);
-    if (typeof this._onFailure === 'function') {
-      this._onFailure('Connection to host was lost.');
+    if (typeof this.onFailure === 'function') {
+      this.onFailure('Connection to host was lost.');
     }
   }
 
@@ -186,8 +189,8 @@ export default class Client {
     console.log('CLIENT: connection error:', err);
     this._peer.destroy();
     clearInterval(this._pingInterval);
-    if (typeof this._onFailure === 'function') {
-      this._onFailure('Unexpected error with connection to room.');
+    if (typeof this.onFailure === 'function') {
+      this.onFailure('Unexpected error with connection to room.');
     }
   }
 
@@ -208,8 +211,8 @@ export default class Client {
         break;
       }
       case DataPacket.MESSAGE: {
-        if (typeof this._onMessage === 'function') {
-          this._onMessage(dataPacket.content);
+        if (typeof this.onMessage === 'function') {
+          this.onMessage(dataPacket.content);
         }
         break;
       }

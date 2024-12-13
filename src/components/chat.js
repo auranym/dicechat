@@ -1,4 +1,4 @@
-import Message from '../lib/message';
+import { Message } from '../lib';
 const MAX_MESSAGES = 300; // This was chosen arbitrarily...
 
 export class Chat extends HTMLElement {
@@ -10,6 +10,9 @@ export class Chat extends HTMLElement {
   constructor() {
     super();
     this.messages = [];
+  }
+
+  connectedCallback() {
     this.render();
   }
 
