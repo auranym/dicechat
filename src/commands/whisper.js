@@ -29,6 +29,6 @@ export default new Command({
   },
   applier: (arg, username, host) => {
     const [, target, message] = arg.match(regex);
-    return new Message(message, { username: `(${username} to ${target})` });
+    return new Message(message, { username: `(whisper) ${username} to ${target}` });
   }
 });

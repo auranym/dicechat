@@ -17,6 +17,11 @@ export class Room extends HTMLElement {
    */
   onSend;
 
+  /**
+   * @type {string}
+   */
+  _prevSent;
+
   constructor() {
     super();
   }
@@ -50,8 +55,12 @@ export class Room extends HTMLElement {
 
     // Hydrate
     this.querySelector('#message').onkeydown = event => {
-      if (event.keyCode === 13) {
+      if (event.code === 'Enter') {
         this._onSend();
+      }
+      else if (event.code === 'ArrowUp') {
+        event.preventDefault();
+        this.querySelector('#message').value = this._prevSent ?? '';
       }
     };
     this.querySelector('#send').onclick = this._onSend.bind(this);
@@ -77,6 +86,7 @@ export class Room extends HTMLElement {
 
     if (messageInput.value) {
       this.onSend?.(DOMPurify.sanitize(messageInput.value));
+      this._prevSent = messageInput.value;
       messageInput.value = '';
     }
 
