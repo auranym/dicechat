@@ -1,3 +1,4 @@
+import help from './help';
 import me from './me';
 import whisper from './whisper';
 
@@ -8,6 +9,7 @@ import whisper from './whisper';
 export default ({
   // Add commands similarly to below.
   // Make sure that commands do not have overlapping names!
+  [help.name]: help,
   [me.name]: me,
   [whisper.name]: whisper
 });
