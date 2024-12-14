@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import { Message } from '../lib';
+import { Message, showAlert } from '../lib';
 
 export class Room extends HTMLElement {
   static observedAttributes = ['host', 'code'];
@@ -16,6 +16,10 @@ export class Room extends HTMLElement {
    * @type {function}
    */
   onSend;
+  /**
+   * Callback when the leave button is clicked.
+   */
+  onLeave;
 
   /**
    * @type {string}
@@ -34,8 +38,16 @@ export class Room extends HTMLElement {
     // Render HTML
     this.innerHTML = /* html */`
     <main class="vflex align-center gap-xs">
-      <h1 class="text-centered h3">${this.host}'s room</h1>
-      <div class="vflex panel full-width gap-xs">
+      <header class="full-width hflex align-end gap-sm">
+        <button id="leave" class="icon-button left" aria-label="Leave the room">
+          <dc-icon icon="logout"></dc-icon>
+        </button>
+        <h1 class="text-centered flex h3">${this.host}'s room</h1>
+        <button id="code" class="icon-button right" aria-label="See room code">
+          <dc-icon icon="key"></dc-icon>
+        </button>
+      </header>
+      <div class="flex vflex panel full-width gap-xs">
         <dc-chat class="flex full-width"></dc-chat>
         <div class="hflex justify-stretch gap-xs">
           <input
@@ -63,6 +75,8 @@ export class Room extends HTMLElement {
         this.querySelector('#message').value = this._prevSent ?? '';
       }
     };
+    this.querySelector('#leave').onclick = this._onLeave.bind(this);
+    this.querySelector('#code').onclick = this._onCode.bind(this);
     this.querySelector('#send').onclick = this._onSend.bind(this);
   }
 
@@ -78,6 +92,14 @@ export class Room extends HTMLElement {
    */
   addMessage(message) {
     this.querySelector('dc-chat').addMessage(message);
+  }
+  
+  _onLeave() {
+    this.onLeave?.();
+  }
+  
+  _onCode() {
+    showAlert(`The room code is ${this.code}.`);
   }
 
   _onSend() {

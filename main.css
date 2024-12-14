@@ -33,6 +33,7 @@
   font-family: var(--font);
   font-weight: var(--font-weight);
   font-size: 18px;
+  word-break: break-word;
 }
 
 /*
@@ -166,18 +167,14 @@ dc-chat > ul {
   scrollbar-color: var(--color-light-gray) transparent;
 }
 
-dc-chat > ul > li {
-  word-break: break-all;
-}
-
 dc-chat > ul > li.line {
   font-style: italic;
   word-break: unset;
 }
 
 dc-chat > ul > li.block {
+  font-style: italic;
   padding: var(--space-xs) var(--space-sm);
-  text-align: center;
   word-break: unset;
 }
 
@@ -186,13 +183,23 @@ dc-alert {
   top: var(--space-sm);
 }
 
+dc-room main {
+  height: calc(100vh - var(--space-md));
+}
+
+dc-room header {
+  display: flex;
+  justify-content: center;
+}
+
 dc-room h1 {
   margin-bottom: 0 !important;
+  line-height: 1em;
+  word-break: break-word;
 }
 
 dc-room div:has(> dc-chat) {
   padding: var(--space-sm) !important;
-  height: calc(100vh - (var(--font-xxl) + 2 * var(--space-md)));
 }
 
 dc-room input,

@@ -24,7 +24,7 @@ export class Home extends HTMLElement {
     <main class="vflex align-center gap-xs">
       <!-- Heading -->
       <h1 class="text-centered">Welcome to <dc-logo></dc-logo>!</h1>
-      <p class="font-md text-centered">Roll dice with friends with<br/>no sign-up and no hassle.</p>
+      <p class="font-md text-centered">Roll dice with friends<br/>quick, easy, and free!</p>
 
       <!-- Username -->
       <section class="full-width vflex align-stretch">

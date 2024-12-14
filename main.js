@@ -21,9 +21,21 @@ function onHomeReady(obj) {
     hideAlert();
 
     const room = showRoom();
+    const roomCode = obj.getRoomCode()
     room.setAttribute('host', obj.getUsername());
-    room.setAttribute('code', obj.getRoomCode());
+    room.setAttribute('code', roomCode);
     room.onSend = message => onHostRoomSend(obj, message);
+    room.onLeave = () => obj.close();
+    // Show host welcome message.
+    room.addMessage(new Message( /* html */`
+      <div class="text-centered">
+        Welcome to your DiceChat room!<br/>
+        Type "/help" to see a list of commands.
+        <br/><br/>
+        Your room code is <b>${roomCode}</b>.
+      </div>
+      `, { renderAsBlock: true }
+    ));
   }
 
   // Set callbacks and create room for a Client.
@@ -37,6 +49,15 @@ function onHomeReady(obj) {
     room.setAttribute('host', obj.getHostUsername());
     room.setAttribute('code', obj.getRoomCode());
     room.onSend = message => onClientRoomSend(obj, message);
+    room.onLeave = () => obj.leave();
+    // Show client welcome message.
+    room.addMessage(new Message( /* html */`
+      <div class="text-centered">
+        Welcome to the DiceChat room!<br/>
+        Type "/help" to see a list of commands.
+      </div>
+      `, { renderAsBlock: true }
+    ));
   }
 
   else {
