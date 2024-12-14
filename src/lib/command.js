@@ -91,7 +91,7 @@ export default class Command {
    * @returns {string|null} The command name in the message, if it is a command. Otherwise, `null`.
    */
   static getCommand(message) {
-    return message.toLowerCase().match(/\/([A-z]+)/)?.[1] ?? null;
+    return message.toLowerCase().match(/^\/([A-z]+)/)?.[1] ?? null;
   }
 
   /**
@@ -99,6 +99,6 @@ export default class Command {
    * @returns {string} Argument for the command. Empty string if no arg.
    */
   static getArg(message) {
-    return message.match(/\/[A-z]+ ?(.*)/)[1];
+    return message.match(/^\/[A-z]+ ?(.*)/)[1];
   }
 }

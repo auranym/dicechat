@@ -8,6 +8,8 @@ describe('getCommand', () => {
     expect(Command.getCommand('123')).toBe(null);
     expect(Command.getCommand('/ foo')).toBe(null);
     expect(Command.getCommand('/123')).toBe(null);
+    expect(Command.getCommand('./foo')).toBe(null);
+    expect(Command.getCommand('foo bar /baz qux')).toBe(null);
   });
 
   test('returns the command string when input is a command format', () => {

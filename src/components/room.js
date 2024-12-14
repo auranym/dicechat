@@ -74,6 +74,10 @@ export class Room extends HTMLElement {
         event.preventDefault();
         this.querySelector('#message').value = this._prevSent ?? '';
       }
+      else if (event.code === 'ArrowDown') {
+        event.preventDefault();
+        this.querySelector('#message').value = '';
+      }
     };
     this.querySelector('#leave').onclick = this._onLeave.bind(this);
     this.querySelector('#code').onclick = this._onCode.bind(this);
