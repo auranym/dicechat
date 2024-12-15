@@ -1,5 +1,4 @@
-import DOMPurify from 'dompurify';
-import { validateRoomCode, Client, Host, showAlert, hideAlert } from '../lib';
+import { validateRoomCode, Client, Host, showAlert, hideAlert, sanitize } from '../lib';
 
 export class Home extends HTMLElement {
   /**
@@ -123,7 +122,7 @@ export class Home extends HTMLElement {
   }
 
   _getUsername() {
-    return DOMPurify.sanitize(this.querySelector('#username').value.replace(/ /g, ''));
+    return sanitize(this.querySelector('#username').value.replace(/ /g, ''));
   }
 
   _onUsernameInput(val) {

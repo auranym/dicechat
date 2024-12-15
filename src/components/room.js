@@ -1,5 +1,4 @@
-import DOMPurify from 'dompurify';
-import { Message, showAlert } from '../lib';
+import { showAlert, sanitize } from '../lib';
 
 export class Room extends HTMLElement {
   static observedAttributes = ['host', 'code'];
@@ -92,7 +91,7 @@ export class Room extends HTMLElement {
   /**
    * Adds the message object to the chat component
    * (via the similarly named addMessage method).
-   * @param {Message} message 
+   * @param {string} message 
    */
   addMessage(message) {
     this.querySelector('dc-chat').addMessage(message);
@@ -111,7 +110,7 @@ export class Room extends HTMLElement {
     const messageInput = this.querySelector('#message');
 
     if (messageInput.value) {
-      this.onSend?.(DOMPurify.sanitize(messageInput.value));
+      this.onSend?.(sanitize(messageInput.value));
       this._prevSent = messageInput.value;
       messageInput.value = '';
     }

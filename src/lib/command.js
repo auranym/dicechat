@@ -1,5 +1,3 @@
-import { Host, Message } from '.';
-
 /**
  * Class for a chat command (which are messages that begin with "/"
  * and do something special).
@@ -62,7 +60,7 @@ export default class Command {
   /**
    * Main action of the command. It works by taking the command argument,
    * the username of the user, and the room's Host object as its parameters
-   * and returns a Message object.
+   * and returns a string.
    * 
    * @type {function}
    */
@@ -74,8 +72,8 @@ export default class Command {
    * @param {string} config.description Short description of what the command does.
    * @param {string} config.invalidMessage Short message shown when command is used incorrectly.
    * @param {function} config.validator Validates command is being used correctly. Returns a boolean.
-   * @param {function} config.targeter Determines who to show the output Message to.
-   * @param {function} config.applier Action of the command. Returns a Message.
+   * @param {function} config.targeter Determines who to show the output string to.
+   * @param {function} config.applier Action of the command. Returns a string.
    */
   constructor({ name, description, invalidMessage, validator, targeter, applier }) {
     this.name = name;

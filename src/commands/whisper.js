@@ -1,4 +1,4 @@
-import { Command, Message } from '../lib';
+import { Command } from '../lib';
 
 const regex = /([^ ]+) (.*)/;
 
@@ -29,6 +29,6 @@ export default new Command({
   },
   applier: (arg, username, host) => {
     const [, target, message] = arg.match(regex);
-    return new Message(message, { username: `(whisper) ${username} to ${target}` });
+    return `<b>(whisper) ${username} to ${target}:</b> ${message}`;
   }
 });

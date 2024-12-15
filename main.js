@@ -1,6 +1,6 @@
 import './main.css';
 import '@fontsource-variable/quicksand';
-import { Client, Host, Message, Command, showAlert, hideAlert } from './src/lib';
+import { Client, Host, Command, showAlert, hideAlert } from './src/lib';
 import commands from './src/commands';
 
 /**
@@ -27,15 +27,14 @@ function onHomeReady(obj) {
     room.onSend = message => onHostRoomSend(obj, message);
     room.onLeave = () => obj.close();
     // Show host welcome message.
-    room.addMessage(new Message( /* html */`
-      <div class="text-centered">
+    room.addMessage( /* html */`
+      <div class="text-centered mar-v-sm">
         Welcome to your DiceChat room!<br/>
         Type "/help" to see a list of commands.
         <br/><br/>
         Your room code is <b>${roomCode}</b>.
-      </div>
-      `, { renderAsBlock: true }
-    ));
+      </div>`
+    );
   }
 
   // Set callbacks and create room for a Client.
@@ -51,13 +50,12 @@ function onHomeReady(obj) {
     room.onSend = message => onClientRoomSend(obj, message);
     room.onLeave = () => obj.leave();
     // Show client welcome message.
-    room.addMessage(new Message( /* html */`
-      <div class="text-centered">
+    room.addMessage( /* html */`
+      <div class="text-centered mar-v-sm">
         Welcome to the DiceChat room!<br/>
         Type "/help" to see a list of commands.
-      </div>
-      `, { renderAsBlock: true }
-    ));
+      </div>`
+    );
   }
 
   else {
@@ -82,7 +80,7 @@ function onFailure(cause) {
  * @param {string} message Contents of the message.
  */
 function onClientMessage(client, message) {
-  getRoom().addMessage(Message.parse(message));
+  getRoom().addMessage(message);
 }
 
 /**
@@ -91,7 +89,10 @@ function onClientMessage(client, message) {
  * @param {string} message The text content being sent.
  */
 function onClientRoomSend(client, message) {
-  client.send(new Message(message, { username: client.getUsername() }).toString());
+  // Forward along to the host for parsing and formatting.
+  // The message to be displayed will be received back from
+  // the host.
+  client.send(message);
 }
 
 /**
@@ -101,9 +102,8 @@ function onClientRoomSend(client, message) {
  * @param {string} message Contents of the message.
  */
 function onHostMessage(host, username, message) {
-  const messageObj = Message.parse(message);
   // First check if the message is a command.
-  const commandName = Command.getCommand(messageObj.content);
+  const commandName = Command.getCommand(message);
   
   // If so, then try to do the command.
   if (commandName != null) {
@@ -112,19 +112,19 @@ function onHostMessage(host, username, message) {
     const command = commands[commandName];
     if (!(command instanceof Command)) {
       // If not, send invalid command message to the sender.
-      host.send(new Message('Invalid command. Type /help for a list of commands.').toString(), [username]);
+      host.send('Invalid command. Type /help for a list of commands.', [username]);
       return;
     }
 
     // If we reach here, the command exists.
     // So now validate that it is being used correctly
-    const commandArg = Command.getArg(messageObj.content);
+    const commandArg = Command.getArg(message);
     if (
       typeof command.validator === 'function'
       && !command.validator(commandArg, username, host)
     ) {
       // If used incorrectly, say so.
-      host.send(new Message(command.invalidMessage).toString(), [username]);
+      host.send(command.invalidMessage, [username]);
       return;
     }
 
@@ -133,7 +133,7 @@ function onHostMessage(host, username, message) {
       ? command.targeter(commandArg, username, host)
       : undefined;
     const commandMessage = command.applier(commandArg, username, host);
-    host.send(commandMessage.toString(), commandTargets);
+    host.send(commandMessage, commandTargets);
     // Also show in the host's chat if applicable.
     if (!commandTargets || commandTargets.includes(host.getUsername())) {
       getRoom().addMessage(commandMessage);
@@ -142,8 +142,9 @@ function onHostMessage(host, username, message) {
 
   // If *not* a command, perform like a regular message.
   else {
-    host.send(message);
-    getRoom().addMessage(messageObj);
+    const messageStr = /* html */`<b>${username}:</b> ${message}`;
+    host.send(messageStr);
+    getRoom().addMessage(messageStr);
   }
 }
 
@@ -153,9 +154,9 @@ function onHostMessage(host, username, message) {
  * @param {string} username Username of client that just joined.
  */
 function onHostJoin(host, username) {
-  const messageObj = new Message(`${username} has joined!`);
-  host.send(messageObj.toString());
-  getRoom().addMessage(messageObj);
+  const message = `${username} has joined!`;
+  host.send(message);
+  getRoom().addMessage(message);
 }
 
 /**
@@ -164,9 +165,9 @@ function onHostJoin(host, username) {
  * @param {string} username Username of client that just left. 
  */
 function onHostLeave(host, username) {
-  const messageObj = new Message(`${username} has left.`);
-  host.send(messageObj.toString());
-  getRoom().addMessage(messageObj);
+  const message = `${username} has left.`;
+  host.send(message);
+  getRoom().addMessage(message);
 }
 
 /**
@@ -176,9 +177,8 @@ function onHostLeave(host, username) {
  */
 function onHostRoomSend(host, message) {
   const username = host.getUsername();
-  const messageObj = new Message(message, { username: host.getUsername() });
   // First check if the message is a command.
-  const commandName = Command.getCommand(messageObj.content);
+  const commandName = Command.getCommand(message);
   // If so, then try to do the command.
   if (commandName != null) {
 
@@ -186,19 +186,19 @@ function onHostRoomSend(host, message) {
     const command = commands[commandName];
     if (!(command instanceof Command)) {
       // If not, send invalid command message to the sender.
-      getRoom().addMessage(new Message('Invalid command. Type /help for a list of commands.'));
+      getRoom().addMessage('Invalid command. Type /help for a list of commands.');
       return;
     }
 
     // If we reach here, the command exists.
     // So now validate that it is being used correctly
-    const commandArg = Command.getArg(messageObj.content);
+    const commandArg = Command.getArg(message);
     if (
       typeof command.validator === 'function'
       && !command.validator(commandArg, username, host)
     ) {
       // If used incorrectly, say so.
-      getRoom().addMessage(new Message(command.invalidMessage));
+      getRoom().addMessage(command.invalidMessage);
       return;
     }
 
@@ -209,7 +209,7 @@ function onHostRoomSend(host, message) {
     const commandMessage = command.applier(commandArg, username, host);
     // Send if command targets are not only the host
     if (!commandTargets || !(commandTargets.length === 1 && commandTargets[0] === username)) {
-      host.send(commandMessage.toString(), commandTargets);
+      host.send(commandMessage, commandTargets);
     }
     // Also show in the host's chat if applicable.
     if (!commandTargets || commandTargets.includes(host.getUsername())) {
@@ -219,8 +219,9 @@ function onHostRoomSend(host, message) {
   
   // If *not* a command, perform like a regular message.
   else {
-    host.send(messageObj.toString());
-    getRoom().addMessage(messageObj);
+    const messageStr = /* html */`<b>${username}:</b> ${message}`;
+    host.send(messageStr);
+    getRoom().addMessage(messageStr);
   }
 }
 

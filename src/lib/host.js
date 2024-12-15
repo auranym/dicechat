@@ -1,7 +1,7 @@
 import { Peer } from 'peerjs';
-import DOMPurify from 'dompurify';
 import { generateRoomCode, getRoomCodePeerId, validateRoomCode } from './room-code';
 import DataPacket from './data-packet';
+import sanitize from './sanitize';
 
 export default class Host {
   // Public properties
@@ -49,7 +49,7 @@ export default class Host {
     // This *should* have been done already, but just in case,
     // sanitize the username again and check that it is
     // a non-empty string.
-    this._username = DOMPurify.sanitize(username ?? '');
+    this._username = sanitize(username ?? '');
     if (this._username === '') {
       if (typeof onFailure === 'function') {
         onFailure('Host username is invalid.');

@@ -1,5 +1,5 @@
 import { DiceRoll } from '@dice-roller/rpg-dice-roller';
-import { Command, Message } from '../lib';
+import { Command } from '../lib';
 
 const anchor = text => `<a href="https://dice-roller.github.io/documentation/guide/notation/" target="_blank">${text}</a>`
 
@@ -21,13 +21,11 @@ export default new Command({
   // Targets everyone.
   applier: (arg, username, host) => {
     const roll = new DiceRoll(arg);
-    return new Message( /* html */`
-    <div class="text-centered">
+    return /* html */`
+    <div class="text-centered mar-v-sm">
       ${username} rolled ${roll.notation}:<br/>
       ${roll.rolls.join(' ')} = <b>${roll.total}</b>
     </div>
-    `, {
-      renderAsBlock: true
-    });
+    `;
   }
 })

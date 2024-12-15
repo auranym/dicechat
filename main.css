@@ -135,6 +135,10 @@ input:disabled::placeholder {
   color: var(--color-gray);
 }
 
+li {
+  margin: var(--space-xs) 0;
+}
+
 /*
 --------------------
      COMPONENTS
@@ -167,15 +171,8 @@ dc-chat > ul {
   scrollbar-color: var(--color-light-gray) transparent;
 }
 
-dc-chat > ul > li.line {
-  font-style: italic;
-  word-break: unset;
-}
-
-dc-chat > ul > li.block {
-  font-style: italic;
-  padding: var(--space-xs) 0;
-  word-break: unset;
+dc-chat > ul > li {
+  margin: 0;
 }
 
 dc-alert {
@@ -318,4 +315,14 @@ dc-room button {
 
 .icon-button > dc-icon {
   display: block;
+}
+
+.mar-v-xs {
+  margin-top: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+
+.mar-v-sm {
+  margin-top: var(--space-sm);
+  margin-bottom: var(--space-sm);
 }
