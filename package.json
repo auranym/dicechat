@@ -1,6 +1,6 @@
 {
-  "name": "dice-chat",
-  "version": "0.1.0",
+  "name": "dicechat",
+  "version": "1.0.0",
   "main": "index.html",
   "scripts": {
     "start": "npm run dev",
@@ -16,7 +16,7 @@
   ],
   "author": "auranym",
   "license": "MIT",
-  "description": "",
+  "description": "Peer-to-peer chatting and dice rolling",
   "devDependencies": {
     "vite": "^5.4.8",
     "vitest": "^2.1.2"
